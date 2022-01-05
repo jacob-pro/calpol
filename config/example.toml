@@ -1,0 +1,30 @@
+## Note: Configuration options can also be passed as environment variables. E.g. RUNNER.INTERVAL=15
+
+# Port the REST API should run on
+api_port = 5000
+# Note this must be a Postgres database
+database_url = "postgres://USER:PASSWORD@SERVER:PORT/DATABASE"
+
+[mailer]
+host = "mail.contoso.com"
+port = 587
+username = "username"
+password = "password"
+send_from = "Calpol <username@contoso.com>"
+reply_to = "Calpol <username@contoso.com>"
+
+[runner]
+# How many minutes between starting test runs
+interval = 15
+# How many minutes the complete test suite is allowed to run for
+timeout = 10
+# How many days worth of test results and runner logs to keep
+log_age = 30
+# How many tests to run concurrently
+concurrency = 4
+
+# This section is only required if you want to send SMS notifications
+[twilio]
+account_id = "ACCOUNT_ID"
+auth_token = "TOKEN"
+send_from = "+44000000"
