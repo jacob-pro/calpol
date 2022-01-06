@@ -25,6 +25,8 @@ The server is available as a docker image: `ghcr.io/jacob-pro/calpol:latest`.
 
 Note the API is plain-HTTP - it is intended to be deployed behind a reverse proxy.
 
+See the [example](./config/docker-compose-example.yml) for how to deploy with docker-compose.
+
 ### Using the CLI
 
 A [CLI](./calpol-cli) is provided for easy use communication with the server's REST API.
