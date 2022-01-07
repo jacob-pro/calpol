@@ -1,7 +1,7 @@
 ## Note: Configuration options can also be passed as environment variables. E.g. RUNNER.INTERVAL=15
 
-# Port the REST API should run on
-api_port = 5000
+# Socket the REST API should listen on
+api_socket = "0.0.0.0:80"
 # Note this must be a Postgres database
 database_url = "postgres://USER:PASSWORD@SERVER:PORT/DATABASE"
 

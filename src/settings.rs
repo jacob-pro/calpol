@@ -2,13 +2,14 @@ use anyhow::Context;
 use config::{Config, Environment, File, FileFormat};
 use lettre::message::Mailbox;
 use serde::{Deserialize, Serialize};
+use std::net::SocketAddr;
 use validator::{Validate, ValidationError};
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct Settings {
-    /// Port the API should listen on
-    #[serde(default = "default_api_port")]
-    pub api_port: u16,
+    /// Socket the API should listen on.
+    #[serde(default = "default_api_socket")]
+    pub api_socket: SocketAddr,
     /// Postgres connection URL
     pub database_url: String,
     #[validate]
@@ -81,8 +82,8 @@ impl Settings {
     }
 }
 
-fn default_api_port() -> u16 {
-    80
+fn default_api_socket() -> SocketAddr {
+    "0.0.0.0:80".parse().unwrap()
 }
 
 fn default_runner_interval() -> u8 {

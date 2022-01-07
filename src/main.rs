@@ -62,7 +62,7 @@ async fn main() -> anyhow::Result<()> {
     if cfg!(debug_assertions) {
         log::warn!("This is a debug build")
     };
-    let settings = Settings::new(opts.config.as_ref())?;
+    let settings = Arc::new(Settings::new(opts.config.as_ref())?);
 
     let manager = ConnectionManager::<PgConnection>::new(&settings.database_url);
     let pool = r2d2::Pool::builder().build(manager)?;
@@ -70,8 +70,7 @@ async fn main() -> anyhow::Result<()> {
 
     match opts.subcommand {
         SubCommand::Server => {
-            let port = settings.api_port;
-            let state = AppState::new(pool, lettre_sync(&settings.mailer)?, Arc::new(settings));
+            let state = AppState::new(pool, lettre_sync(&settings.mailer)?, Arc::clone(&settings));
             let rate_limit_store = MemoryStore::new();
             let runner = test_runner::start(state.clone()).fuse();
             let server = HttpServer::new(move || {
@@ -80,7 +79,7 @@ async fn main() -> anyhow::Result<()> {
                     .service(scope("api").configure(|cfg| api::configure(cfg, &rate_limit_store)))
                     .wrap(middleware::Logger::default())
             })
-            .bind(format!("0.0.0.0:{}", port))?
+            .bind(&settings.api_socket)?
             .run()
             .fuse();
             futures::pin_mut!(runner, server);
