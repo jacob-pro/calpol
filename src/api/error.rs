@@ -133,3 +133,11 @@ where
         })
     }
 }
+
+pub fn get_mailbox_for_user(
+    user: &crate::database::User,
+) -> Result<lettre::message::Mailbox, ApiError> {
+    // This is an internal error because users with bad emails should never be created
+    user.get_mailbox()
+        .map_err(|e| internal_server_error("UserHasInvalidEmail", e))
+}

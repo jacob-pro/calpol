@@ -54,4 +54,20 @@ impl Profile {
             .join(id.to_string().as_str())
             .unwrap()
     }
+
+    pub fn route_url_with_id_and<I: ToString>(
+        &self,
+        route: &'static str,
+        id: &I,
+        and: &'static str,
+    ) -> Url {
+        assert!(route.ends_with("/"));
+        self.url
+            .join(route)
+            .unwrap()
+            .join(format!("{}/", id.to_string()).as_str())
+            .unwrap()
+            .join(and)
+            .unwrap()
+    }
 }

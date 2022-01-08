@@ -37,11 +37,8 @@ Using `calpol-cli --help` should explain everything, but here are some example c
 ## Prompts for server URL, email, and password. Saves the profile to AppData (or equivalent)
 calpol-cli sessions login
 
-## Get the user id from your current profile
-USER_ID=$(calpol-cli.exe session show | jq '.user.id')
-
-## Enable sms notifications on an account
-calpol-cli users update $USER_ID --sms-notifications true --phone-number +4400000000
+## Enable sms notifications on currently logged in account
+calpol-cli users update self --sms-notifications true --phone-number +4400000000
 
 ## Create another user - they will be sent a password reset token
 calpol-cli users create $NAME $EMAIL 
@@ -96,3 +93,18 @@ Test an SMTP server:
   }
 }
 ```
+
+## Limitations
+
+This is an application designed purely for my personal use-case, and thus there are a number of limitations which
+may make this less useful for other users:
+
+- The User Management system whilst secure, is only designed for a very small organisation; all user accounts have 
+  full privileges to create/update/delete other users on the server.
+- There is only a CLI provided, which may not be the most friendly to use.
+- There is a lot of missing documentation.
+- Currently, limited to basic HTTP and SMTP tests.
+- All tests are run on the same interval.
+- There is no support for scaling this beyond a single server.
+
+However, any pull requests to improve these would be welcome.

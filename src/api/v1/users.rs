@@ -1,5 +1,5 @@
 use crate::api::auth::Auth;
-use crate::api::error::MapDieselUniqueViolation;
+use crate::api::error::{get_mailbox_for_user, MapDieselUniqueViolation};
 use crate::api::error::{ApiErrorMap, DieselTransactionError};
 use crate::api::v1::password_reset::send_reset_email;
 use crate::api::{api_resource, auth, response_mapper};
@@ -18,6 +18,7 @@ use diesel::Connection;
 use diesel_repository::CrudRepository;
 use futures::FutureExt;
 use http_api_problem::ApiError;
+use lettre::{Message, Transport};
 
 pub fn configure(users: &mut ServiceConfig) {
     users.service(
@@ -31,6 +32,8 @@ pub fn configure(users: &mut ServiceConfig) {
             .route(web::put().to(update))
             .route(web::delete().to(delete)),
     );
+    users.service(api_resource("{user_id}/test_email").route(web::post().to(test_email)));
+    users.service(api_resource("{user_id}/test_sms").route(web::post().to(test_sms)));
 }
 
 async fn list(
@@ -170,6 +173,42 @@ async fn delete(_auth: Auth, user_id: Path<i32>, state: Data<AppState>) -> impl 
                 Ok(())
             })?,
         )
+    })
+    .map(response_mapper)
+    .await
+}
+
+async fn test_email(_auth: Auth, user_id: Path<i32>, state: Data<AppState>) -> impl Responder {
+    web::block(move || {
+        let database = state.database();
+        let user_repository = UserRepositoryImpl::new(&database);
+        let user = retrieve_user(&user_repository, *user_id)?;
+        let message = Message::builder()
+            .to(get_mailbox_for_user(&user)?)
+            .from(state.settings().mailer.send_from.clone())
+            .reply_to(state.settings().mailer.reply_to().clone())
+            .subject("Calpol Test Email")
+            .body(format!("Test email for {}", user.name))
+            .unwrap();
+        state.mailer().send(&message).map_api_error()?;
+        Ok(())
+    })
+    .map(response_mapper)
+    .await
+}
+
+async fn test_sms(_auth: Auth, user_id: Path<i32>, state: Data<AppState>) -> impl Responder {
+    web::block(move || -> Result<(), _> {
+        let database = state.database();
+        let user_repository = UserRepositoryImpl::new(&database);
+        let user = retrieve_user(&user_repository, *user_id)?;
+        if let Some(_phone) = user.phone_number {
+            Err(ApiError::new(StatusCode::NOT_IMPLEMENTED))
+        } else {
+            Err(ApiError::builder(StatusCode::BAD_REQUEST)
+                .message("User doesn't have a phone number set")
+                .finish())
+        }
     })
     .map(response_mapper)
     .await

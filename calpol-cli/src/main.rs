@@ -72,6 +72,8 @@ pub enum ClientError {
     FailedToParseJsonInput(#[source] serde_json::Error),
     #[error("Failed to read argument file: {0}")]
     FailedToReadArgumentFile(#[source] std::io::Error),
+    #[error("Invalid profile id, expected integer or `self`")]
+    InvalidProfileId,
 }
 
 #[derive(Debug, Serialize)]
