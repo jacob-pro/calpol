@@ -4,6 +4,7 @@ mod tcp;
 
 use crate::test_runner::runnable::http::test_http;
 use crate::test_runner::runnable::smtp::test_smtp;
+use crate::test_runner::runnable::tcp::test_tcp;
 use anyhow::{anyhow, bail, Context};
 use async_trait::async_trait;
 use calpol_model::tests::{IpVersion, TestConfig, TestVariant};
@@ -13,7 +14,6 @@ use std::net::{IpAddr, SocketAddr};
 use url::Url;
 use x509_parser::certificate::X509Certificate;
 use x509_parser::traits::FromDer;
-use crate::test_runner::runnable::tcp::test_tcp;
 
 pub const TIMEOUT_SEC: u64 = 5;
 

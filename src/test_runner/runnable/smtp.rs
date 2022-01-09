@@ -1,4 +1,4 @@
-use crate::test_runner::runnable::{TIMEOUT_SEC, verify_certificate_expiry};
+use crate::test_runner::runnable::{verify_certificate_expiry, TIMEOUT_SEC};
 use anyhow::{anyhow, bail, Context};
 use calpol_model::tests::{Smtp, SmtpEncryption, SmtpServerType};
 use lettre::transport::smtp::client::{AsyncSmtpConnection, TlsParameters};

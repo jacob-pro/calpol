@@ -61,13 +61,17 @@ async fn send_sms_notifications(
 ) -> anyhow::Result<()> {
     if let Some(messagebird) = ctx.state.message_bird() {
         let count = phone_numbers.len();
-        let result = messagebird.send_message(&message, phone_numbers).compat().await.context("Failed sending SMS messages")?;
+        let result = messagebird
+            .send_message(&message, phone_numbers)
+            .compat()
+            .await
+            .context("Failed sending SMS messages")?;
         log::info!("Sent {} sms messages: {:?}", count, result);
     } else {
         log::error!(
-                "Unable to send {} sms notifications because messagebird is not configured",
-                phone_numbers.len()
-            );
+            "Unable to send {} sms notifications because messagebird is not configured",
+            phone_numbers.len()
+        );
     }
     Ok(())
 }

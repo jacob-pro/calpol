@@ -3,8 +3,8 @@ use crate::settings::{MessageBirdSetting, Settings};
 use diesel::r2d2::ConnectionManager;
 use diesel::{r2d2, PgConnection};
 use lettre::SmtpTransport;
-use std::sync::Arc;
 use messagebird::MessageBirdClient;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -44,7 +44,9 @@ impl AppState {
     }
 }
 
-fn message_bird_client(setting: Option<&MessageBirdSetting>) -> anyhow::Result<Option<MessageBirdClient>> {
+fn message_bird_client(
+    setting: Option<&MessageBirdSetting>,
+) -> anyhow::Result<Option<MessageBirdClient>> {
     Ok(if let Some(setting) = setting {
         Some(MessageBirdClient::new(&setting.access_key)?)
     } else {

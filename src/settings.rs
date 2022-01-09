@@ -123,4 +123,3 @@ fn validate_runner_setting(runner_setting: &RunnerSetting) -> Result<(), Validat
     }
     Ok(())
 }
-

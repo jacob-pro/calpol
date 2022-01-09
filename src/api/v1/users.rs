@@ -212,7 +212,10 @@ async fn test_sms(
     if let Some(phone) = user.phone_number {
         if let Some(messagebird) = state.message_bird() {
             let body = "Calpol Test SMS";
-            let res = messagebird.send_message(body, vec![phone.clone()]).await.map_api_error()?;
+            let res = messagebird
+                .send_message(body, vec![phone.clone()])
+                .await
+                .map_api_error()?;
             log::info!("Sent test SMS to {}: {:?}", phone, res);
             Ok(HttpResponse::Ok().json(()))
         } else {
