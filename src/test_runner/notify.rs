@@ -1,8 +1,7 @@
 use crate::database::Test;
-use crate::mailer::lettre_async;
-use crate::settings::{MailerSetting, TwilioSetting};
-use crate::state::AppState;
+use crate::settings::TwilioSetting;
 use crate::test_runner::database::NotificationTargets;
+use crate::test_runner::RunnerContext;
 use anyhow::Context;
 use futures::future::join_all;
 use lettre::message::Mailbox;
@@ -15,13 +14,13 @@ const MAX_SMS_CHARS: usize = 70;
 pub async fn send_notifications(
     failed_tests: &Vec<(Test, anyhow::Error)>,
     targets: NotificationTargets,
-    state: &AppState,
+    ctx: &RunnerContext,
 ) -> anyhow::Result<()> {
     if failed_tests.is_empty() {
         return Ok(());
     }
     if !targets.sms.is_empty() {
-        if let Some(twilio_setting) = state.settings().twilio.as_ref() {
+        if let Some(twilio_setting) = ctx.state.settings().twilio.as_ref() {
             let body = create_sms_body(failed_tests);
             send_sms_notifications(targets.sms, body, twilio_setting).await?;
         } else {
@@ -33,27 +32,25 @@ pub async fn send_notifications(
     }
     if !targets.emails.is_empty() {
         let body = create_email_body(failed_tests);
-        send_email_notifications(targets.emails, body, &state.settings().mailer).await?;
+        send_email_notifications(&ctx, targets.emails, body).await?;
     }
     Ok(())
 }
 
 async fn send_email_notifications(
+    ctx: &RunnerContext,
     emails: Vec<Mailbox>,
     message: String,
-    setting: &MailerSetting,
 ) -> anyhow::Result<()> {
-    let mailer = lettre_async(setting).context("Failed to start mailer")?;
     let results = join_all(emails.into_iter().map(|email| {
-        let mailer = &mailer;
         let message = Message::builder()
             .to(email.clone())
-            .from(setting.send_from.clone())
-            .reply_to(setting.reply_to().clone())
+            .from(ctx.state.settings().mailer.send_from.clone())
+            .reply_to(ctx.state.settings().mailer.reply_to().clone())
             .subject("Calpol Test Failure")
             .body(message.clone())
             .unwrap();
-        async move { (mailer.send(message).await, email) }
+        async move { (ctx.mailer.send(message).await, email) }
     }))
     .await;
     for (result, mailbox) in results {

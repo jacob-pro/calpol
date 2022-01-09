@@ -13,7 +13,6 @@ mod state;
 mod test_runner;
 
 use crate::database::{Connection, NewUser, UserRepositoryImpl};
-use crate::mailer::lettre_sync;
 use crate::settings::Settings;
 use actix_ratelimit::MemoryStore;
 use actix_web::web::scope;
@@ -70,7 +69,7 @@ async fn main() -> anyhow::Result<()> {
 
     match opts.subcommand {
         SubCommand::Server => {
-            let state = AppState::new(pool, lettre_sync(&settings.mailer)?, Arc::clone(&settings));
+            let state = AppState::new(Arc::clone(&settings), pool)?;
             let rate_limit_store = MemoryStore::new();
             let runner = test_runner::start(state.clone()).fuse();
             let server = HttpServer::new(move || {

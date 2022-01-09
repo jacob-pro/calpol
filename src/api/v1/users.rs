@@ -189,7 +189,7 @@ async fn test_email(_auth: Auth, user_id: Path<i32>, state: Data<AppState>) -> i
             .from(state.settings().mailer.send_from.clone())
             .reply_to(state.settings().mailer.reply_to().clone())
             .subject("Calpol Test Email")
-            .body(format!("Test email for {}", user.name))
+            .body("Calpol Test Email".to_string())
             .unwrap();
         state.mailer().send(&message).map_api_error()?;
         Ok(())
@@ -213,7 +213,7 @@ async fn test_sms(
     if let Some(phone) = user.phone_number {
         if let Some(twilio) = &state.settings().twilio {
             let client = twilio.new_client();
-            let body = format!("Test SMS for {}", user.name);
+            let body = "Calpol Test SMS";
             let outbound = OutboundMessage::new(&twilio.send_from, &phone, &body);
             client.send_message(outbound).await.map_api_error()?;
             Ok(HttpResponse::Ok().json(()))

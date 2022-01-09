@@ -3,6 +3,7 @@ use config::{Config, Environment, File, FileFormat};
 use lettre::message::Mailbox;
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
+use std::time::Duration;
 use validator::{Validate, ValidationError};
 
 #[derive(Debug, Deserialize, Validate)]
@@ -55,6 +56,19 @@ pub struct RunnerSetting {
     /// Max log age in days
     #[serde(default = "default_runner_log_age")]
     pub log_age: u16,
+}
+
+impl RunnerSetting {
+    pub fn timeout_duration(&self) -> Duration {
+        chrono::Duration::minutes(self.timeout as i64)
+            .to_std()
+            .unwrap()
+    }
+    pub fn interval_duration(&self) -> Duration {
+        chrono::Duration::minutes(self.interval as i64)
+            .to_std()
+            .unwrap()
+    }
 }
 
 #[derive(Debug, Deserialize, Validate)]
