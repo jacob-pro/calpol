@@ -7,6 +7,7 @@ use anyhow::Context;
 use futures::future::join_all;
 use lettre::message::Mailbox;
 use lettre::{AsyncTransport, Message};
+use tokio_compat_02::FutureExt;
 use twilio::OutboundMessage;
 
 const MAX_SMS_CHARS: usize = 70;
@@ -77,7 +78,7 @@ async fn send_sms_notifications(
         async move {
             let from = &setting.send_from.clone();
             let outbound = OutboundMessage::new(&from, &number, &message);
-            client.send_message(outbound).await
+            client.send_message(outbound).compat().await
         }
     }))
     .await;

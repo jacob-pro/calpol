@@ -9,7 +9,7 @@ use crate::database::{
 use crate::state::AppState;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path, ServiceConfig};
-use actix_web::{web, Responder};
+use actix_web::{web, HttpResponse, Responder};
 use calpol_model::api_v1::{
     CreateUserRequest, ListUsersRequest, ListUsersResponse, UpdateUserRequest, UserSummary,
 };
@@ -19,6 +19,7 @@ use diesel_repository::CrudRepository;
 use futures::FutureExt;
 use http_api_problem::ApiError;
 use lettre::{Message, Transport};
+use twilio::OutboundMessage;
 
 pub fn configure(users: &mut ServiceConfig) {
     users.service(
@@ -197,19 +198,33 @@ async fn test_email(_auth: Auth, user_id: Path<i32>, state: Data<AppState>) -> i
     .await
 }
 
-async fn test_sms(_auth: Auth, user_id: Path<i32>, state: Data<AppState>) -> impl Responder {
-    web::block(move || -> Result<(), _> {
-        let database = state.database();
+async fn test_sms(
+    _auth: Auth,
+    user_id: Path<i32>,
+    state: Data<AppState>,
+) -> Result<HttpResponse, ApiError> {
+    let database = state.database();
+    let user = web::block(move || {
         let user_repository = UserRepositoryImpl::new(&database);
-        let user = retrieve_user(&user_repository, *user_id)?;
-        if let Some(_phone) = user.phone_number {
-            Err(ApiError::new(StatusCode::NOT_IMPLEMENTED))
+        retrieve_user(&user_repository, *user_id)
+    })
+    .await
+    .map_api_error()?;
+    if let Some(phone) = user.phone_number {
+        if let Some(twilio) = &state.settings().twilio {
+            let client = twilio.new_client();
+            let body = format!("Test SMS for {}", user.name);
+            let outbound = OutboundMessage::new(&twilio.send_from, &phone, &body);
+            client.send_message(outbound).await.map_api_error()?;
+            Ok(HttpResponse::Ok().json(()))
         } else {
             Err(ApiError::builder(StatusCode::BAD_REQUEST)
-                .message("User doesn't have a phone number set")
+                .message("SMS is not enabled on the server")
                 .finish())
         }
-    })
-    .map(response_mapper)
-    .await
+    } else {
+        Err(ApiError::builder(StatusCode::BAD_REQUEST)
+            .message("User doesn't have a phone number set")
+            .finish())
+    }
 }

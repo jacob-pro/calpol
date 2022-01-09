@@ -88,6 +88,12 @@ impl IntoApiError for actix_web::error::PathError {
     }
 }
 
+impl IntoApiError for twilio::TwilioError {
+    fn into_api_error(self) -> ApiError {
+        internal_server_error("TwilioError", self)
+    }
+}
+
 // https://github.com/diesel-rs/diesel/issues/2342
 #[derive(Debug, Error)]
 pub enum DieselTransactionError {

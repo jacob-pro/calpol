@@ -47,8 +47,9 @@ serde_plain = "1.0.0"
 socket2 = "0.4.2"
 thiserror = "1.0.30"
 tokio = { version = "1.15.0", features = ["rt-multi-thread"] }
+tokio-compat-02 = "0.2"
 trust-dns-resolver = "0.20.3"
-twilio = { git = "https://github.com/jacob-pro/twilio-rs" }
+twilio = "1.0.0"
 url = { version = "2.2.2", features = ["serde"] }
 validator = { version = "0.12", features = ["derive"] }
 x509-parser = "0.12.0"
