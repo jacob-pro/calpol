@@ -40,6 +40,7 @@ http = "0.2.6"
 http-api-problem = { version = "0.51.0", features = ["actix-web", "api-error"] }
 lettre = { git = "https://github.com/jacob-pro/lettre", rev = "71c0d0e", features = ["pool", "serde", "tokio1", "tokio1-native-tls"] }
 log = "0.4.14"
+messagebird = { path = "./messagebird" }
 native-tls = "0.2.8"
 reqwest = "0.11.8"
 serde = "1.0"
@@ -54,4 +55,3 @@ twilio = "1.0.0"
 url = { version = "2.2.2", features = ["serde"] }
 validator = { version = "0.12", features = ["derive"] }
 x509-parser = "0.12.0"
-messagebird = { path = "./messagebird" }
