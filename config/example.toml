@@ -24,7 +24,5 @@ log_age = 30
 concurrency = 4
 
 # This section is only required if you want to send SMS notifications
-[twilio]
-account_id = "ACCOUNT_ID"
-auth_token = "TOKEN"
-send_from = "+44000000"
+[messagebird]
+access_key = "...."

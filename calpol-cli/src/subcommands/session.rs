@@ -87,7 +87,8 @@ fn logout(opts: &GlobalOpts) -> Result<String, CalpolError> {
     CLIENT
         .post(profile.route_url("api/v1/sessions/logout"))
         .bearer_auth(profile.token)
-        .send()?;
+        .send()?
+        .verify_success()?;
     Profile::delete(opts.profile.as_ref())?;
     Ok("Successfully logged out".to_string())
 }
@@ -113,7 +114,8 @@ fn delete(opts: &GlobalOpts, args: &Delete) -> Result<String, CalpolError> {
     CLIENT
         .delete(profile.route_url_with_id("api/v1/sessions/", &args.id))
         .bearer_auth(profile.token)
-        .send()?;
+        .send()?
+        .verify_success()?;
     Ok(format!("Successfully deleted session {}", args.id))
 }
 

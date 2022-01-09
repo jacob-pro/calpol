@@ -19,7 +19,6 @@ use diesel_repository::CrudRepository;
 use futures::FutureExt;
 use http_api_problem::ApiError;
 use lettre::{Message, Transport};
-use twilio::OutboundMessage;
 
 pub fn configure(users: &mut ServiceConfig) {
     users.service(
@@ -211,11 +210,10 @@ async fn test_sms(
     .await
     .map_api_error()?;
     if let Some(phone) = user.phone_number {
-        if let Some(twilio) = &state.settings().twilio {
-            let client = twilio.new_client();
+        if let Some(messagebird) = state.message_bird() {
             let body = "Calpol Test SMS";
-            let outbound = OutboundMessage::new(&twilio.send_from, &phone, &body);
-            client.send_message(outbound).await.map_api_error()?;
+            let res = messagebird.send_message(body, vec![phone.clone()]).await.map_api_error()?;
+            log::info!("Sent test SMS to {}: {:?}", phone, res);
             Ok(HttpResponse::Ok().json(()))
         } else {
             Err(ApiError::builder(StatusCode::BAD_REQUEST)

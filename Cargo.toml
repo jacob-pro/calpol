@@ -1,7 +1,8 @@
 [workspace]
 members = [
     "calpol-cli",
-    "calpol-model"
+    "calpol-model",
+    "messagebird",
 ]
 resolver = "2"
 
@@ -53,3 +54,4 @@ twilio = "1.0.0"
 url = { version = "2.2.2", features = ["serde"] }
 validator = { version = "0.12", features = ["derive"] }
 x509-parser = "0.12.0"
+messagebird = { path = "./messagebird" }

@@ -56,5 +56,6 @@ fn get(_: &GlobalOpts, profile: &Profile, args: &Get) -> Result<String, CalpolEr
         .bearer_auth(&profile.token)
         .json(&item)
         .send()?
+        .verify_success()?
         .json_pretty()
 }

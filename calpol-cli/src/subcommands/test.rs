@@ -84,6 +84,7 @@ fn get(_: &GlobalOpts, profile: &Profile, args: &Get) -> Result<String, CalpolEr
         .get(profile.route_url_with_id("api/v1/tests/", &args.name))
         .bearer_auth(&profile.token)
         .send()?
+        .verify_success()?
         .json_pretty()
 }
 
@@ -116,7 +117,8 @@ fn delete(_: &GlobalOpts, profile: &Profile, args: &Delete) -> Result<String, Ca
     CLIENT
         .delete(profile.route_url_with_id("api/v1/tests/", &args.name))
         .bearer_auth(&profile.token)
-        .send()?;
+        .send()?
+        .verify_success()?;
     Ok(format!("Successfully deleted test {}", args.name))
 }
 

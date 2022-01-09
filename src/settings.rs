@@ -18,7 +18,8 @@ pub struct Settings {
     #[validate]
     pub runner: RunnerSetting,
     #[validate]
-    pub twilio: Option<TwilioSetting>,
+    #[serde(rename = "messagebird")]
+    pub message_bird: Option<MessageBirdSetting>,
 }
 
 #[derive(Debug, Deserialize, Validate)]
@@ -72,10 +73,8 @@ impl RunnerSetting {
 }
 
 #[derive(Debug, Deserialize, Validate)]
-pub struct TwilioSetting {
-    pub account_id: String,
-    pub auth_token: String,
-    pub send_from: String,
+pub struct MessageBirdSetting {
+    pub access_key: String,
 }
 
 impl Settings {
@@ -125,8 +124,3 @@ fn validate_runner_setting(runner_setting: &RunnerSetting) -> Result<(), Validat
     Ok(())
 }
 
-impl TwilioSetting {
-    pub fn new_client(&self) -> twilio::Client {
-        twilio::Client::new(&self.account_id, &self.auth_token)
-    }
-}

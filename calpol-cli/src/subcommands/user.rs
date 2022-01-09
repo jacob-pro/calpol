@@ -97,6 +97,7 @@ fn get(_: &GlobalOpts, profile: &Profile, args: &Get) -> Result<String, CalpolEr
         .get(profile.route_url_with_id("api/v1/users/", &id))
         .bearer_auth(&profile.token)
         .send()?
+        .verify_success()?
         .json_pretty()
 }
 
@@ -145,7 +146,8 @@ fn delete(_: &GlobalOpts, profile: &Profile, args: &Delete) -> Result<String, Ca
     CLIENT
         .delete(profile.route_url_with_id("api/v1/users/", &id))
         .bearer_auth(&profile.token)
-        .send()?;
+        .send()?
+        .verify_success()?;
     Ok(format!("Successfully deleted user {}", args.id))
 }
 
@@ -160,7 +162,8 @@ fn test_email(_: &GlobalOpts, profile: &Profile, args: &TestEmail) -> Result<Str
     CLIENT
         .post(profile.route_url_with_id_and("api/v1/users/", &id, "test_email"))
         .bearer_auth(&profile.token)
-        .send()?;
+        .send()?
+        .verify_success()?;
     Ok(format!("Successfully sent test email for user {}", args.id))
 }
 
@@ -175,7 +178,8 @@ fn test_sms(_: &GlobalOpts, profile: &Profile, args: &TestSms) -> Result<String,
     CLIENT
         .post(profile.route_url_with_id_and("api/v1/users/", &id, "test_sms"))
         .bearer_auth(&profile.token)
-        .send()?;
+        .send()?
+        .verify_success()?;
     Ok(format!("Successfully sent test SMS for user {}", args.id))
 }
 

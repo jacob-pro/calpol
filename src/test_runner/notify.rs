@@ -1,5 +1,4 @@
 use crate::database::Test;
-use crate::settings::TwilioSetting;
 use crate::test_runner::database::NotificationTargets;
 use crate::test_runner::RunnerContext;
 use anyhow::Context;
@@ -7,7 +6,6 @@ use futures::future::join_all;
 use lettre::message::Mailbox;
 use lettre::{AsyncTransport, Message};
 use tokio_compat_02::FutureExt;
-use twilio::OutboundMessage;
 
 const MAX_SMS_CHARS: usize = 70;
 
@@ -20,15 +18,8 @@ pub async fn send_notifications(
         return Ok(());
     }
     if !targets.sms.is_empty() {
-        if let Some(twilio_setting) = ctx.state.settings().twilio.as_ref() {
-            let body = create_sms_body(failed_tests);
-            send_sms_notifications(targets.sms, body, twilio_setting).await?;
-        } else {
-            log::error!(
-                "Unable to send {} sms notifications because twilio is not configured",
-                targets.sms.len()
-            );
-        }
+        let body = create_sms_body(failed_tests);
+        send_sms_notifications(&ctx, targets.sms, body).await?;
     }
     if !targets.emails.is_empty() {
         let body = create_email_body(failed_tests);
@@ -64,27 +55,19 @@ async fn send_email_notifications(
 }
 
 async fn send_sms_notifications(
+    ctx: &RunnerContext,
     phone_numbers: Vec<String>,
     message: String,
-    setting: &TwilioSetting,
 ) -> anyhow::Result<()> {
-    let client = setting.new_client();
-    let results = join_all(phone_numbers.into_iter().map(|number| {
-        let client = &client;
-        let message = message.clone();
-        async move {
-            let from = &setting.send_from.clone();
-            let outbound = OutboundMessage::new(&from, &number, &message);
-            client.send_message(outbound).compat().await
-        }
-    }))
-    .await;
-    for m in results
-        .into_iter()
-        .collect::<Result<Vec<_>, _>>()
-        .context("Failed sending twilio message")?
-    {
-        log::info!("Sent sms message to {}, has status {:?}", m.to, m.status)
+    if let Some(messagebird) = ctx.state.message_bird() {
+        let count = phone_numbers.len();
+        let result = messagebird.send_message(&message, phone_numbers).compat().await.context("Failed sending SMS messages")?;
+        log::info!("Sent {} sms messages: {:?}", count, result);
+    } else {
+        log::error!(
+                "Unable to send {} sms notifications because messagebird is not configured",
+                phone_numbers.len()
+            );
     }
     Ok(())
 }

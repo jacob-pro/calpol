@@ -88,9 +88,9 @@ impl IntoApiError for actix_web::error::PathError {
     }
 }
 
-impl IntoApiError for twilio::TwilioError {
+impl IntoApiError for messagebird::Error {
     fn into_api_error(self) -> ApiError {
-        internal_server_error("TwilioError", self)
+        internal_server_error("MessageBirdError", self)
     }
 }
 
