@@ -94,6 +94,21 @@ Test an SMTP server:
 }
 ```
 
+Test a TCP connection:
+
+```json
+{
+  "name": "contoso_ssh",
+  "enabled": true,
+  "config": {
+    "ip_version": "both",
+    "type": "tcp",
+    "host": "ssh.contoso.com",
+    "port": 22
+  }
+}
+```
+
 ## Limitations
 
 This is an application designed purely for my personal use-case, and thus there are a number of limitations which
@@ -103,7 +118,7 @@ may make this less useful for other users:
   full privileges to create/update/delete other users on the server.
 - There is only a CLI provided, which may not be the most friendly to use.
 - There is a lot of missing documentation.
-- Currently, limited to basic HTTP and SMTP tests.
+- Currently, limited to basic HTTP, SMTP and TCP tests.
 - All tests are run on the same interval.
 - There is no support for scaling this beyond a single server.
 

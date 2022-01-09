@@ -12,5 +12,3 @@ From local source:
 ```
 cargo install --path . calpol-cli --debug
 ```
-
-

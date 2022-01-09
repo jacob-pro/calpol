@@ -1,4 +1,4 @@
-use crate::test_runner::runnable::verify_certificate_expiry;
+use crate::test_runner::runnable::{TIMEOUT_SEC, verify_certificate_expiry};
 use anyhow::{anyhow, bail, Context};
 use calpol_model::tests::{Smtp, SmtpEncryption, SmtpServerType};
 use lettre::transport::smtp::client::{AsyncSmtpConnection, TlsParameters};
@@ -12,7 +12,6 @@ pub async fn test_smtp(smtp: &Smtp, _domain: Domain) -> anyhow::Result<()> {
     // TODO: Use correct net domain: https://github.com/lettre/lettre/issues/715
     let host = get_host(smtp).await?;
     let port = get_port(smtp);
-    let timeout = Duration::from_secs(5);
     let client_id = ClientId::default();
     let tls_parameters = if let SmtpEncryption::SMTPS = smtp.encryption {
         Some(TlsParameters::new(host.clone()).context("Failed to build tls parameters")?)
@@ -21,7 +20,7 @@ pub async fn test_smtp(smtp: &Smtp, _domain: Domain) -> anyhow::Result<()> {
     };
     let mut connection = AsyncSmtpConnection::connect_tokio1(
         (host.clone(), port),
-        Some(timeout),
+        Some(Duration::from_secs(TIMEOUT_SEC)),
         &client_id,
         tls_parameters,
     )

@@ -19,6 +19,7 @@ pub struct TestConfig {
 pub enum TestVariant {
     Http(Http),
     Smtp(Smtp),
+    Tcp(Tcp),
 }
 
 #[cfg(feature = "validator")]
@@ -27,6 +28,7 @@ impl Validate for TestVariant {
         match self {
             TestVariant::Http(t) => t.validate(),
             TestVariant::Smtp(t) => t.validate(),
+            TestVariant::Tcp(t) => t.validate(),
         }
     }
 }
@@ -134,4 +136,11 @@ impl Default for SmtpEncryption {
     fn default() -> Self {
         Self::STARTTLS
     }
+}
+
+#[cfg_attr(feature = "validator", derive(Validate))]
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct Tcp {
+    pub host: String,
+    pub port: u16,
 }

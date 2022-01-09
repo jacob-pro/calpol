@@ -1,5 +1,6 @@
 mod http;
 mod smtp;
+mod tcp;
 
 use crate::test_runner::runnable::http::test_http;
 use crate::test_runner::runnable::smtp::test_smtp;
@@ -12,6 +13,9 @@ use std::net::{IpAddr, SocketAddr};
 use url::Url;
 use x509_parser::certificate::X509Certificate;
 use x509_parser::traits::FromDer;
+use crate::test_runner::runnable::tcp::test_tcp;
+
+pub const TIMEOUT_SEC: u64 = 5;
 
 #[async_trait]
 pub trait Runnable {
@@ -34,6 +38,7 @@ async fn run_variant(variant: &TestVariant, net_domain: Domain) -> anyhow::Resul
     match &variant {
         TestVariant::Http(http) => test_http(http, net_domain).await?,
         TestVariant::Smtp(smtp) => test_smtp(smtp, net_domain).await?,
+        TestVariant::Tcp(tcp) => test_tcp(tcp, net_domain).await?,
     }
     Ok(())
 }
