@@ -26,7 +26,7 @@ pub async fn start(state: AppState) -> anyhow::Result<()> {
         .await?
 }
 
-// TODO: Move mailer directly into AppState once Tokio 1.0 support in Actix
+// TODO: Move mailer directly into AppState once Actix uses Tokio 1.0
 pub struct RunnerContext {
     mailer: AsyncSmtpTransport<Tokio1Executor>,
     state: AppState,

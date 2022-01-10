@@ -9,6 +9,7 @@ const SMS_ENDPOINT: &'static str = "https://rest.messagebird.com/messages";
 const TIMEOUT_SEC: u64 = 5;
 
 #[derive(Clone)]
+// TODO: Upgrade this to Tokio 1.0 once Actix supports it
 pub struct MessageBirdClient {
     inner: Client,
 }

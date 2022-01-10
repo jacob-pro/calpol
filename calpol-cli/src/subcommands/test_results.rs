@@ -1,7 +1,7 @@
 use crate::profile::Profile;
 use crate::response::ResponseExt;
 use crate::{CalpolError, GlobalOpts, Runnable, CLIENT};
-use calpol_model::api_v1::GetTestResultsRequest;
+use calpol_model::api_v1::{GetTestResultsRequest, TestResultSummary};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
@@ -29,15 +29,29 @@ impl Runnable for TestResults {
 }
 
 #[derive(Parser, Debug)]
-pub struct List {}
+pub struct List {
+    /// Only show failing
+    #[clap(long)]
+    failing: bool,
+}
 
-fn list(_: &GlobalOpts, profile: &Profile, _: &List) -> Result<String, CalpolError> {
-    CLIENT
+fn list(_: &GlobalOpts, profile: &Profile, args: &List) -> Result<String, CalpolError> {
+    let results: Vec<TestResultSummary> = CLIENT
         .get(profile.route_url("api/v1/test_results"))
         .bearer_auth(&profile.token)
         .send()?
         .verify_success()?
-        .json_pretty()
+        .json()?;
+    let results = results
+        .into_iter()
+        .filter(|r| {
+            if args.failing {
+                return !r.success;
+            }
+            true
+        })
+        .collect::<Vec<_>>();
+    Ok(serde_json::to_string_pretty(&results).unwrap())
 }
 
 #[derive(Parser, Debug)]
