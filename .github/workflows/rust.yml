@@ -58,11 +58,11 @@ jobs:
           echo VERSION=$VERSION
           docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
-      - uses: snok/container-retention-policy@v1.2.1
+      - uses: snok/container-retention-policy@v1
         name: Clean untagged images
         with:
           image-names: ${{ env.IMAGE_NAME }}
-          cut-off: 0 min ago UTC
+          cut-off: 12 hours ago UTC
           untagged-only: true
           account-type: personal
           token: ${{ secrets.PACKAGE_PAT }}

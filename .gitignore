@@ -1,6 +1,5 @@
 /target/
 **/*.rs.bk
 .idea
-config.yml
 .env
 example_models.rs

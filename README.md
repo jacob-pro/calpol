@@ -123,3 +123,8 @@ may make this less useful for other users:
 - There is no support for scaling this beyond a single server.
 
 However, any pull requests to improve these would be welcome.
+
+## Building on Windows
+
+- Set `PQ_LIB_DIR` environment variable to `C:\Program Files\PostgreSQL\${VERSION}\lib`
+- Add `C:\Program Files\PostgreSQL\${VERSION}\bin` to `PATH`
