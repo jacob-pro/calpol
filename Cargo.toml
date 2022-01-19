@@ -38,7 +38,7 @@ futures = "0.3.19"
 getrandom = "0.2.3"
 http = "0.2.6"
 http-api-problem = { version = "0.51.0", features = ["actix-web", "api-error"] }
-lettre = { git = "https://github.com/jacob-pro/lettre", rev = "71c0d0e", features = ["pool", "serde", "tokio1", "tokio1-native-tls"] }
+lettre = { git = "https://github.com/lettre/lettre", rev = "29c34ad", features = ["pool", "serde", "tokio1", "tokio1-native-tls"] }
 log = "0.4.14"
 messagebird = { path = "./messagebird" }
 native-tls = "0.2.8"

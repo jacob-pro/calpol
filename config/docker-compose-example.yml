@@ -41,3 +41,5 @@ networks:
       driver: default
       config:
         - subnet: "172.16.238.0/24"
+        - subnet: "fc00:0000:0000:0001::0/64"
+        # Use https://github.com/robbertkl/docker-ipv6nat to setup the IPv6 routing

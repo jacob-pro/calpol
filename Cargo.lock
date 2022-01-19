@@ -653,7 +653,7 @@ dependencies = [
  "getrandom 0.2.3",
  "http",
  "http-api-problem",
- "lettre 0.10.0-rc.4 (git+https://github.com/jacob-pro/lettre?rev=71c0d0e)",
+ "lettre 0.10.0-rc.4 (git+https://github.com/lettre/lettre?rev=29c34ad)",
  "log",
  "messagebird",
  "native-tls",
@@ -1734,7 +1734,7 @@ dependencies = [
 [[package]]
 name = "lettre"
 version = "0.10.0-rc.4"
-source = "git+https://github.com/jacob-pro/lettre?rev=71c0d0e#71c0d0ed704c84d69bc32288ff153f12df2d467b"
+source = "git+https://github.com/lettre/lettre?rev=29c34ad#29c34adc25b1e4c162fd5650c3051a156ade35a0"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
