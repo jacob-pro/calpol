@@ -38,6 +38,6 @@ pub fn configure(v1: &mut ServiceConfig, rate_limit_store: &MemoryStore) {
     v1.service(
         api_scope("runner_logs")
             .configure(runner_logs::configure)
-            .wrap(auth.clone()),
+            .wrap(auth),
     );
 }

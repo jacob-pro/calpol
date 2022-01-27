@@ -52,7 +52,10 @@ pub async fn test_smtp(smtp: &Smtp, _domain: Domain) -> anyhow::Result<()> {
 
 async fn get_host(smtp: &Smtp) -> anyhow::Result<String> {
     Ok(if let SmtpServerType::MailTransferAgent = smtp.r#type {
-        let mut opts = ResolverOpts::default();
+        let mut opts = ResolverOpts {
+            timeout: Duration::from_secs(5),
+            ..Default::default()
+        };
         opts.timeout = Duration::from_secs(5);
         let resolver = AsyncResolver::tokio(ResolverConfig::google(), opts)
             .context("Failed to get resolver")?;

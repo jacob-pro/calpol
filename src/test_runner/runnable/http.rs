@@ -29,7 +29,7 @@ pub async fn test_http(http: &Http, net_domain: Domain) -> anyhow::Result<()> {
     if !http
         .expected_code
         .map(|expected| expected == response.status().as_u16())
-        .unwrap_or(response.status().is_success())
+        .unwrap_or_else(|| response.status().is_success())
     {
         bail!(
             "Received unexpected http response code: {}",

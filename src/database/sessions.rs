@@ -35,7 +35,7 @@ pub trait SessionRepository: CrudRepository<Session, i32> {
     fn find_belonging_to_user_by_ip_and_agent(
         &self,
         user: &User,
-        last_ip: &Vec<u8>,
+        last_ip: &[u8],
         user_agent: &str,
     ) -> QueryResult<Option<Session>>;
 
@@ -52,7 +52,7 @@ impl SessionRepository for SessionRepositoryImpl<'_> {
     fn find_belonging_to_user_by_ip_and_agent(
         &self,
         user: &User,
-        last_ip: &Vec<u8>,
+        last_ip: &[u8],
         user_agent: &str,
     ) -> QueryResult<Option<Session>> {
         Session::belonging_to(user)

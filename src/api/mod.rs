@@ -65,5 +65,5 @@ fn auth_rate_limiter(store: &MemoryStore) -> RateLimiter<MemoryStoreActor> {
 }
 
 async fn index() -> String {
-    format!("Calpol API")
+    "Calpol API".to_string()
 }

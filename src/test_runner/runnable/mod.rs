@@ -85,7 +85,7 @@ impl DomainExt for Domain {
         let first = addr
             .first()
             .ok_or(anyhow!("Url socket didn't resolve to matching IP Version"))?;
-        Ok(first.clone())
+        Ok(*first)
     }
 
     fn name(self) -> &'static str {

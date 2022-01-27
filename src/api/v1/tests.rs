@@ -38,9 +38,9 @@ async fn list(state: Data<AppState>) -> impl Responder {
             .find_all()
             .map_api_error()?
             .into_iter()
-            .map(|t| TestSummary::try_from(t))
+            .map(TestSummary::try_from)
             .collect();
-        Ok(tests?)
+        tests
     })
     .map(response_mapper)
     .await
@@ -66,7 +66,7 @@ async fn create(
                     .message("Test with this name already exists")
                     .finish()
             })?;
-        Ok(TestSummary::try_from(test)?)
+        TestSummary::try_from(test)
     })
     .map(response_mapper)
     .await
@@ -79,11 +79,11 @@ where
     test_repository
         .find_by_name(test_name)
         .map_api_error()?
-        .ok_or(
+        .ok_or_else(|| {
             ApiError::builder(StatusCode::NOT_FOUND)
                 .message("Test name not found")
-                .finish(),
-        )
+                .finish()
+        })
 }
 
 async fn get(state: Data<AppState>, test_name: Path<String>) -> impl Responder {
@@ -91,7 +91,7 @@ async fn get(state: Data<AppState>, test_name: Path<String>) -> impl Responder {
         let database = state.database();
         let test_repository = TestRepositoryImpl::new(&database);
         let test = retrieve_test(&test_repository, test_name.as_ref())?;
-        Ok(TestSummary::try_from(test)?)
+        TestSummary::try_from(test)
     })
     .map(response_mapper)
     .await
@@ -107,17 +107,17 @@ async fn update(
         let body = json.into_inner();
         let test_repository = TestRepositoryImpl::new(&database);
         let mut test = retrieve_test(&test_repository, test_name.as_str())?;
-        body.enabled.map(|enabled| {
+        if let Some(enabled) = body.enabled {
             test.enabled = enabled;
-        });
-        body.config.map(|config| {
+        }
+        if let Some(config) = body.config {
             test.config = serde_json::to_value(config).unwrap();
-        });
-        body.failure_threshold.map(|allowed_failures| {
-            test.failure_threshold = allowed_failures as i32;
-        });
+        }
+        if let Some(failure_threshold) = body.failure_threshold {
+            test.failure_threshold = failure_threshold as i32;
+        }
         test_repository.update(&test).map_api_error()?;
-        Ok(TestSummary::try_from(test)?)
+        TestSummary::try_from(test)
     })
     .map(response_mapper)
     .await

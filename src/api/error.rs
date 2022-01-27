@@ -130,10 +130,12 @@ where
 {
     fn map_unique_violation(self, f: F) -> Result<T, ApiError> {
         self.map_err(|e| {
-            if let diesel::result::Error::DatabaseError(k, m) = &e {
-                if let diesel::result::DatabaseErrorKind::UniqueViolation = k {
-                    return f(m.as_ref());
-                }
+            if let diesel::result::Error::DatabaseError(
+                diesel::result::DatabaseErrorKind::UniqueViolation,
+                m,
+            ) = &e
+            {
+                return f(m.as_ref());
             }
             e.into_api_error()
         })

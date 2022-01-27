@@ -118,7 +118,7 @@ async fn run_tests(ctx: &RunnerContext, timeout: Instant) -> anyhow::Result<RunR
     .await?;
     let notification_targets = database::fetch_notification_targets(ctx.state.database()).await?;
 
-    notify::send_notifications(&now_failing, notification_targets, &ctx).await?;
+    notify::send_notifications(&now_failing, notification_targets, ctx).await?;
 
     database::mark_tests_as_failing(
         ctx.state.database(),

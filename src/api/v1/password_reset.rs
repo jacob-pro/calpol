@@ -54,11 +54,11 @@ async fn request(
         let mut user = user_repository
             .find_by_email(&json.email)
             .map_api_error()?
-            .ok_or(
+            .ok_or_else(|| {
                 ApiError::builder(StatusCode::BAD_REQUEST)
                     .message("Email not found")
-                    .finish(),
-            )?;
+                    .finish()
+            })?;
         user.password_reset_token = Some(auth::generate_token(&user));
         user.password_reset_token_creation = Some(Utc::now());
         user_repository.update(&user).map_api_error()?;
@@ -79,7 +79,7 @@ async fn submit(
         let mut user = user_repository
             .find_by_reset_token(&json.token)
             .map_api_error()?
-            .ok_or(ApiError::builder(StatusCode::BAD_REQUEST).message("Invalid reset token"))?;
+            .ok_or_else(|| ApiError::builder(StatusCode::BAD_REQUEST).message("Invalid reset token"))?;
         user.password_reset_token_creation.map(|timestamp| {
             if Utc::now() - timestamp > Duration::hours(TOKEN_EXPIRY_HOURS) {
                 Err(ApiError::builder(StatusCode::BAD_REQUEST)
@@ -90,7 +90,7 @@ async fn submit(
             } else {
                 Ok(())
             }
-        }).unwrap_or(Err(internal_server_error("PasswordResetSubmit", "token creation time missing")))?;
+        }).unwrap_or_else(|| Err(internal_server_error("PasswordResetSubmit", "token creation time missing")))?;
         user.password_hash = Some(bcrypt::hash(&json.new_password, bcrypt::DEFAULT_COST).map_api_error()?);
         user.password_reset_token = None;
         user.password_reset_token_creation = None;

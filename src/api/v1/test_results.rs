@@ -29,15 +29,12 @@ async fn list(state: Data<AppState>) -> impl Responder {
                 let latest = test_result_repository
                     .find_latest_belonging_to(&test, 1)
                     .map_api_error()?;
-                Ok((test, latest.into_iter().nth(0)))
+                Ok((test, latest.into_iter().next()))
             })
             .collect::<Result<Vec<_>, ApiError>>()?;
         let summaries = tests
             .into_iter()
-            .filter_map(|(t, r)| match r {
-                None => None,
-                Some(r) => Some((t, r)),
-            })
+            .filter_map(|(t, r)| r.map(|r| (t, r)))
             .map(|(t, r)| converters::test_and_result_to_summary(&t, r))
             .collect::<Vec<_>>();
         Ok(summaries)

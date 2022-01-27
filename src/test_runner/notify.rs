@@ -10,7 +10,7 @@ use tokio_compat_02::FutureExt;
 const MAX_SMS_CHARS: usize = 70;
 
 pub async fn send_notifications(
-    failed_tests: &Vec<(Test, anyhow::Error)>,
+    failed_tests: &[(Test, anyhow::Error)],
     targets: NotificationTargets,
     ctx: &RunnerContext,
 ) -> anyhow::Result<()> {
@@ -19,11 +19,11 @@ pub async fn send_notifications(
     }
     if !targets.sms.is_empty() {
         let body = create_sms_body(failed_tests);
-        send_sms_notifications(&ctx, targets.sms, body).await?;
+        send_sms_notifications(ctx, targets.sms, body).await?;
     }
     if !targets.emails.is_empty() {
         let body = create_email_body(failed_tests);
-        send_email_notifications(&ctx, targets.emails, body).await?;
+        send_email_notifications(ctx, targets.emails, body).await?;
     }
     Ok(())
 }
@@ -76,7 +76,7 @@ async fn send_sms_notifications(
     Ok(())
 }
 
-fn create_sms_body(failed_tests: &Vec<(Test, anyhow::Error)>) -> String {
+fn create_sms_body(failed_tests: &[(Test, anyhow::Error)]) -> String {
     let mut message = String::from("Calpol: ");
     if failed_tests.len() == 1 {
         let (test, e) = failed_tests.first().unwrap();
@@ -103,7 +103,7 @@ fn create_sms_body(failed_tests: &Vec<(Test, anyhow::Error)>) -> String {
     }
 }
 
-fn create_email_body(failed_tests: &Vec<(Test, anyhow::Error)>) -> String {
+fn create_email_body(failed_tests: &[(Test, anyhow::Error)]) -> String {
     let mut message = format!("Calpol: {} tests failed\n\n", failed_tests.len());
     for (t, e) in failed_tests {
         message.push_str(&format!("{}: {:#}\n\n", t.name, e));

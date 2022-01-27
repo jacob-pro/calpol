@@ -103,11 +103,14 @@ fn retrieve_user<'u, U>(user_repository: &U, user_id: i32) -> Result<User, ApiEr
 where
     U: UserRepository + 'u,
 {
-    user_repository.find_by_id(user_id).map_api_error()?.ok_or(
-        ApiError::builder(StatusCode::NOT_FOUND)
-            .message("User id not found")
-            .finish(),
-    )
+    user_repository
+        .find_by_id(user_id)
+        .map_api_error()?
+        .ok_or_else(|| {
+            ApiError::builder(StatusCode::NOT_FOUND)
+                .message("User id not found")
+                .finish()
+        })
 }
 
 async fn get(_auth: Auth, user_id: Path<i32>, state: Data<AppState>) -> impl Responder {
@@ -131,21 +134,21 @@ async fn update(
         let database = state.database();
         let user_repository = UserRepositoryImpl::new(&database);
         let mut user = retrieve_user(&user_repository, user_id.0)?;
-        json.email.as_ref().map(|email| {
+        if let Some(email) = &json.email {
             user.email = email.to_string().to_ascii_lowercase();
-        });
-        json.name.as_ref().map(|new_name| {
-            user.name = new_name.clone();
-        });
-        json.sms_notifications.map(|sms_notifications| {
+        }
+        if let Some(name) = &json.name {
+            user.name = name.clone();
+        }
+        if let Some(sms_notifications) = json.sms_notifications {
             user.sms_notifications = sms_notifications;
-        });
-        json.email_notifications.map(|email_notifications| {
+        }
+        if let Some(email_notifications) = json.email_notifications {
             user.email_notifications = email_notifications;
-        });
-        json.phone_number.as_ref().map(|phone_number| {
+        }
+        if let Some(phone_number) = &json.phone_number {
             user.phone_number = Some(phone_number.clone());
-        });
+        }
         user_repository.update(&user).map_unique_violation(|_| {
             ApiError::builder(StatusCode::CONFLICT)
                 .title("Email Taken")

@@ -121,20 +121,20 @@ pub async fn process_test_results(
             Ok((test, result, failing))
         }).collect::<anyhow::Result<Vec<_>>>()?;
 
-        // Find tests that have transitioned to a non failing state and update the database
+        // Find previously failing tests that have now transitioned to a non failing state and update the database
         let (now_passing, remaining): (Vec<_>, Vec<_>) = results.into_iter()
-            .partition(|(test, _, failing)| {
-                test.failing == true && *failing == false
+            .partition(|(test, _, failing_now)| {
+                test.failing && !(*failing_now)
             });
         for (mut test, _, _) in now_passing {
             test.failing = false;
             test_repository.update(&test).context("Updating test state to passing")?;
         }
 
-        // Filter tests that have transitioned into a failing state
+        // Filter tests that weren't failing before but have now transitioned into a failing state
         let now_failing = remaining.into_iter()
-            .filter(|(test, _, failing)| {
-                test.failing == false && *failing == true
+            .filter(|(test, _, failing_now)| {
+                !test.failing && *failing_now
             }).map(|(test, result, _)| (test, result.result.err().unwrap())).collect();
 
         Ok(now_failing)
@@ -167,13 +167,13 @@ where
     F: Fn(&dyn diesel::result::DatabaseErrorInformation),
 {
     fn allow_foreign_key_violation(self, f: F) -> QueryResult<()> {
-        if let Err(e) = &self {
-            if let diesel::result::Error::DatabaseError(k, m) = &e {
-                if let diesel::result::DatabaseErrorKind::ForeignKeyViolation = k {
-                    f(m.as_ref());
-                    return Ok(());
-                }
-            }
+        if let Err(diesel::result::Error::DatabaseError(
+            diesel::result::DatabaseErrorKind::ForeignKeyViolation,
+            m,
+        )) = &self
+        {
+            f(m.as_ref());
+            return Ok(());
         }
         self.map(|_| ())
     }

@@ -28,7 +28,7 @@ impl From<database::Session> for SessionSummary {
             last_ip: bincode::deserialize::<IpAddr>(&session.last_ip)
                 .ok()
                 .map(|ip| ip.to_string())
-                .unwrap_or("".to_string()),
+                .unwrap_or_else(|| "".to_string()),
             user_agent: session.user_agent,
         }
     }

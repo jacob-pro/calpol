@@ -26,12 +26,12 @@ pub fn get_user_agent(map: &HeaderMap) -> Result<String, ApiError> {
             u.truncate(512);
             u
         })
-        .ok_or(
+        .ok_or_else(|| {
             ApiError::builder(StatusCode::BAD_REQUEST)
                 .title("Bad Agent")
                 .message("A valid user agent header is required")
-                .finish(),
-        )
+                .finish()
+        })
 }
 
 pub fn generate_token(user: &User) -> String {
@@ -60,11 +60,11 @@ pub async fn authenticator(
         let (mut session, user) = session_repository
             .find_by_token(auth.token())
             .map_api_error()?
-            .ok_or(
+            .ok_or_else(|| {
                 ApiError::builder(StatusCode::UNAUTHORIZED)
                     .message("Invalid session token")
-                    .finish(),
-            )?;
+                    .finish()
+            })?;
         session.last_ip = ip_bin;
         session.user_agent = user_agent;
         session.last_used = Utc::now();

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use thiserror::Error;
 
-const SMS_ENDPOINT: &'static str = "https://rest.messagebird.com/messages";
+const SMS_ENDPOINT: &str = "https://rest.messagebird.com/messages";
 const TIMEOUT_SEC: u64 = 5;
 
 #[derive(Clone)]

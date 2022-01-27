@@ -37,7 +37,7 @@ pub fn configure(sessions: &mut ServiceConfig, rate_limit_store: &MemoryStore) {
     sessions.service(
         api_resource("{session_id}")
             .route(web::delete().to(delete))
-            .wrap(auth.clone()),
+            .wrap(auth),
     );
 }
 
@@ -47,23 +47,23 @@ async fn login(
     req: HttpRequest,
 ) -> impl Responder {
     let ip_addr = req.connection_info().real_ip_address().map_api_error()?;
-    let user_agent = auth::get_user_agent(&req.headers())?;
+    let user_agent = auth::get_user_agent(req.headers())?;
     web::block(move || {
         let database = state.database();
         let user_repository = UserRepositoryImpl::new(&database);
         let user = user_repository
             .find_by_email(&json.email)
             .map_api_error()?
-            .ok_or(
+            .ok_or_else(|| {
                 ApiError::builder(StatusCode::UNAUTHORIZED)
                     .message("Incorrect email or password")
-                    .finish(),
-            )?;
-        let hashed = user.password_hash.as_ref().ok_or(
+                    .finish()
+            })?;
+        let hashed = user.password_hash.as_ref().ok_or_else(|| {
             ApiError::builder(StatusCode::UNAUTHORIZED)
                 .message("You need to reset your account password")
-                .finish(),
-        )?;
+                .finish()
+        })?;
         if !(bcrypt::verify(&json.password, hashed).map_api_error()?) {
             return Err(ApiError::builder(StatusCode::UNAUTHORIZED)
                 .message("Incorrect email or password")
