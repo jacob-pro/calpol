@@ -72,12 +72,16 @@ async fn get_host(smtp: &Smtp) -> anyhow::Result<String> {
             .mx_lookup(smtp.domain.as_str())
             .await
             .context("Failed to lookup mx record")?;
-        let exchange = mx_results
+        let mut exchange = mx_results
             .iter()
             .next()
             .ok_or(anyhow!("No mx records found"))?
             .exchange()
             .to_utf8();
+        // If domain ends with a dot it breaks the certificate hostname verification
+        if exchange.ends_with('.') {
+            exchange.pop();
+        }
         exchange
     } else {
         smtp.domain.clone()
