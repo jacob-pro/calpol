@@ -28,6 +28,9 @@ jobs:
       - name: Cargo Clippy Check
         run: cargo clippy --all-features --all-targets -- -D warnings
 
+      - name: Cargo Clippy Check Cli
+        run: cargo clippy --package calpol-cli --all-features --all-targets -- -D warnings
+
       - name: Cargo Sort Check
         run: cargo install cargo-sort --debug && cargo-sort --workspace --check
 

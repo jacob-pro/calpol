@@ -167,10 +167,10 @@ where
             let mut buf = String::new();
             stdin()
                 .read_to_string(&mut buf)
-                .map_err(|e| ClientError::FailedToReadStdin(e))?;
+                .map_err(ClientError::FailedToReadStdin)?;
             buf
         }
-        Some(s) => fs::read_to_string(s).map_err(|e| ClientError::FailedToReadArgumentFile(e))?,
+        Some(s) => fs::read_to_string(s).map_err(ClientError::FailedToReadArgumentFile)?,
     };
-    serde_json::from_str(&string).map_err(|e| ClientError::FailedToParseJsonInput(e))
+    serde_json::from_str(&string).map_err(ClientError::FailedToParseJsonInput)
 }

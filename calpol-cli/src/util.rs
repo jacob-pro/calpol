@@ -22,12 +22,12 @@ pub fn read_password(use_stdin: bool) -> Result<String, CalpolError> {
         let mut buf = String::new();
         stdin()
             .read_to_string(&mut buf)
-            .map_err(|e| ClientError::FailedToReadStdin(e))?;
+            .map_err(ClientError::FailedToReadStdin)?;
         buf
     } else {
         Password::new()
             .with_prompt("Enter Password")
             .interact()
-            .map_err(|e| ClientError::DialoguerError(e))?
+            .map_err(ClientError::DialoguerError)?
     })
 }

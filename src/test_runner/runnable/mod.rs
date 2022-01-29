@@ -15,18 +15,16 @@ use url::Url;
 use x509_parser::certificate::X509Certificate;
 use x509_parser::traits::FromDer;
 
-pub const TIMEOUT_SEC: u64 = 5;
-
 #[async_trait]
 pub trait Runnable {
-    async fn run(&self) -> anyhow::Result<()>;
+    async fn run(&self, test_name: &str) -> anyhow::Result<()>;
 }
 
 #[async_trait]
 impl Runnable for TestConfig {
-    async fn run(&self) -> anyhow::Result<()> {
+    async fn run(&self, test_name: &str) -> anyhow::Result<()> {
         for net_domain in Domain::from_model(self.ip_version) {
-            run_variant(&self.variant, net_domain)
+            run_variant(&self.variant, net_domain, test_name)
                 .await
                 .context(format!("({})", net_domain.name()))?
         }
@@ -34,10 +32,14 @@ impl Runnable for TestConfig {
     }
 }
 
-async fn run_variant(variant: &TestVariant, net_domain: Domain) -> anyhow::Result<()> {
+async fn run_variant(
+    variant: &TestVariant,
+    net_domain: Domain,
+    test_name: &str,
+) -> anyhow::Result<()> {
     match &variant {
         TestVariant::Http(http) => test_http(http, net_domain).await?,
-        TestVariant::Smtp(smtp) => test_smtp(smtp, net_domain).await?,
+        TestVariant::Smtp(smtp) => test_smtp(smtp, net_domain, test_name).await?,
         TestVariant::Tcp(tcp) => test_tcp(tcp, net_domain).await?,
     }
     Ok(())

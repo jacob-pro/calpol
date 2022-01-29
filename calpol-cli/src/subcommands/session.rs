@@ -72,7 +72,7 @@ fn login(opts: &GlobalOpts, args: &Login) -> Result<String, CalpolError> {
         .json::<LoginResponse>()?;
     let profile = Profile {
         token: response.token,
-        user: response.user.clone(),
+        user: response.user,
         url,
     };
     profile.save_profile(opts.profile.as_ref())?;
@@ -85,7 +85,7 @@ fn logout(opts: &GlobalOpts) -> Result<String, CalpolError> {
     }
     let profile = Profile::load_profile(opts.profile.as_ref())?;
     CLIENT
-        .post(profile.route_url("api/v1/sessions/logout"))
+        .delete(profile.route_url("api/v1/sessions/logout"))
         .bearer_auth(profile.token)
         .send()?
         .verify_success()?;

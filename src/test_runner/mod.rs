@@ -81,28 +81,26 @@ async fn run_tests(ctx: &RunnerContext, timeout: Instant) -> anyhow::Result<RunR
         },
     ))
     .map(|(test, config)| async move {
-        (
-            test,
-            match config {
-                Ok(c) => {
-                    let started = Utc::now();
-                    let result = timeout_at(timeout.into(), c.run())
-                        .await
-                        .context("Cancelled due to global test timeout")
-                        .and_then(std::convert::identity);
-                    RunResult {
-                        started,
-                        finished: Utc::now(),
-                        result,
-                    }
-                }
-                Err(e) => RunResult {
-                    started: Utc::now(),
+        let run_result = match config {
+            Ok(c) => {
+                let started = Utc::now();
+                let result = timeout_at(timeout.into(), c.run(&test.name))
+                    .await
+                    .context("Cancelled due to global test timeout")
+                    .and_then(std::convert::identity);
+                RunResult {
+                    started,
                     finished: Utc::now(),
-                    result: Err(e),
-                },
+                    result,
+                }
+            }
+            Err(e) => RunResult {
+                started: Utc::now(),
+                finished: Utc::now(),
+                result: Err(e),
             },
-        )
+        };
+        (test, run_result)
     })
     .buffer_unordered(ctx.state.settings().runner.concurrency as usize)
     .collect::<Vec<(Test, RunResult)>>()

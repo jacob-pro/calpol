@@ -123,8 +123,8 @@ fn update(_: &GlobalOpts, profile: &Profile, args: &Update) -> Result<String, Ca
         name: args.name.clone(),
         email: args.email.clone(),
         phone_number: args.phone_number.clone(),
-        sms_notifications: args.sms_notifications.clone(),
-        email_notifications: args.email_notifications.clone(),
+        sms_notifications: args.sms_notifications,
+        email_notifications: args.email_notifications,
     };
     CLIENT
         .put(profile.route_url_with_id("api/v1/users/", &id))

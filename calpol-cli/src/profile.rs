@@ -21,16 +21,16 @@ pub struct Profile {
 impl Profile {
     pub fn load_profile(path_override: Option<&PathBuf>) -> Result<Self, ClientError> {
         let file = fs::read_to_string(path_override.unwrap_or(&PROFILE_PATH))
-            .map_err(|e| ClientError::FailedToReadProfileFile(e))?;
-        serde_json::from_str(&file).map_err(|e| ClientError::FailedToParseProfile(e))
+            .map_err(ClientError::FailedToReadProfileFile)?;
+        serde_json::from_str(&file).map_err(ClientError::FailedToParseProfile)
     }
 
     pub fn save_profile(&self, path_override: Option<&PathBuf>) -> Result<(), ClientError> {
         let json = serde_json::to_string_pretty(&self).unwrap();
         let path = path_override.unwrap_or(&PROFILE_PATH);
         fs::create_dir_all(path.parent().unwrap())
-            .map_err(|e| ClientError::FailedToCreateAppDirectory(e))?;
-        fs::write(path, json).map_err(|e| ClientError::FailedToWriteProfileFile(e))
+            .map_err(ClientError::FailedToCreateAppDirectory)?;
+        fs::write(path, json).map_err(ClientError::FailedToWriteProfileFile)
     }
 
     pub fn exists(path_override: Option<&PathBuf>) -> bool {
@@ -39,7 +39,7 @@ impl Profile {
 
     pub fn delete(path_override: Option<&PathBuf>) -> Result<(), ClientError> {
         fs::remove_file(path_override.unwrap_or(&PROFILE_PATH))
-            .map_err(|e| ClientError::FailedToDeleteProfileFile(e))
+            .map_err(ClientError::FailedToDeleteProfileFile)
     }
 
     pub fn route_url(&self, route: &'static str) -> Url {
@@ -47,7 +47,7 @@ impl Profile {
     }
 
     pub fn route_url_with_id<I: ToString>(&self, route: &'static str, id: &I) -> Url {
-        assert!(route.ends_with("/"));
+        assert!(route.ends_with('/'));
         self.url
             .join(route)
             .unwrap()
@@ -61,7 +61,7 @@ impl Profile {
         id: &I,
         and: &'static str,
     ) -> Url {
-        assert!(route.ends_with("/"));
+        assert!(route.ends_with('/'));
         self.url
             .join(route)
             .unwrap()

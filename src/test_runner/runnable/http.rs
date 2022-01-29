@@ -1,4 +1,4 @@
-use crate::test_runner::runnable::{verify_certificate_expiry, DomainExt, TIMEOUT_SEC};
+use crate::test_runner::runnable::{verify_certificate_expiry, DomainExt};
 use anyhow::bail;
 use anyhow::Context;
 use calpol_model::tests::Http;
@@ -11,11 +11,13 @@ use std::str::FromStr;
 use tokio::task::spawn_blocking;
 use url::Url;
 
+const HTTP_TIMEOUT_SEC: u64 = 5;
+
 pub async fn test_http(http: &Http, net_domain: Domain) -> anyhow::Result<()> {
     let client = reqwest::ClientBuilder::default()
         .danger_accept_invalid_certs(!http.verify_ssl)
         .local_address(net_domain.local_address())
-        .timeout(std::time::Duration::from_secs(TIMEOUT_SEC))
+        .timeout(std::time::Duration::from_secs(HTTP_TIMEOUT_SEC))
         .user_agent(format!("calpol-test-server {}", env!("CARGO_PKG_VERSION")))
         .redirect(if http.follow_redirects {
             redirect::Policy::default()
@@ -69,7 +71,10 @@ async fn do_certificate_test(
         let addr = domain.socket_addr_for_url(&url)?;
         let stream = Socket::new(domain, Type::STREAM, None).context("Failed to create socket")?;
         stream
-            .connect_timeout(&addr.into(), std::time::Duration::from_secs(TIMEOUT_SEC))
+            .connect_timeout(
+                &addr.into(),
+                std::time::Duration::from_secs(HTTP_TIMEOUT_SEC),
+            )
             .context(format!("Failed to connect socket {}", addr))?;
         let connector = TlsConnector::builder()
             .danger_accept_invalid_certs(!verify)

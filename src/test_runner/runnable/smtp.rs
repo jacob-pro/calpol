@@ -1,4 +1,4 @@
-use crate::test_runner::runnable::{verify_certificate_expiry, TIMEOUT_SEC};
+use crate::test_runner::runnable::verify_certificate_expiry;
 use anyhow::{anyhow, bail, Context};
 use calpol_model::tests::{Smtp, SmtpEncryption, SmtpServerType};
 use lettre::transport::smtp::client::{AsyncSmtpConnection, TlsParameters};
@@ -8,10 +8,14 @@ use std::time::Duration;
 use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 use trust_dns_resolver::AsyncResolver;
 
-pub async fn test_smtp(smtp: &Smtp, _domain: Domain) -> anyhow::Result<()> {
+const SMTP_CONNECT_TIMEOUT_SEC: u64 = 10;
+const DNS_TIMEOUT_SEC: u64 = 5;
+
+pub async fn test_smtp(smtp: &Smtp, _domain: Domain, test_name: &str) -> anyhow::Result<()> {
     // TODO: Use correct net domain: https://github.com/lettre/lettre/issues/715
     let host = get_host(smtp).await?;
     let port = get_port(smtp);
+    log::info!("{}: Connecting to {}:{}", test_name, host, port);
     let client_id = ClientId::default();
     let tls_parameters = if let SmtpEncryption::SMTPS = smtp.encryption {
         Some(TlsParameters::new(host.clone()).context("Failed to build tls parameters")?)
@@ -20,12 +24,13 @@ pub async fn test_smtp(smtp: &Smtp, _domain: Domain) -> anyhow::Result<()> {
     };
     let mut connection = AsyncSmtpConnection::connect_tokio1(
         (host.clone(), port),
-        Some(Duration::from_secs(TIMEOUT_SEC)),
+        Some(Duration::from_secs(SMTP_CONNECT_TIMEOUT_SEC)),
         &client_id,
         tls_parameters,
     )
     .await
     .context("Failed to connect to the smtp server")?;
+    log::info!("{}: Server banner {}", test_name, connection.server_info().name());
     if let SmtpEncryption::STARTTLS = smtp.encryption {
         connection
             .starttls(
@@ -56,7 +61,7 @@ async fn get_host(smtp: &Smtp) -> anyhow::Result<String> {
             timeout: Duration::from_secs(5),
             ..Default::default()
         };
-        opts.timeout = Duration::from_secs(5);
+        opts.timeout = Duration::from_secs(DNS_TIMEOUT_SEC);
         let resolver = AsyncResolver::tokio(ResolverConfig::google(), opts)
             .context("Failed to get resolver")?;
         let mx_results = resolver
