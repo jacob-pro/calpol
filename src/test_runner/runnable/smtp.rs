@@ -30,7 +30,11 @@ pub async fn test_smtp(smtp: &Smtp, _domain: Domain, test_name: &str) -> anyhow:
     )
     .await
     .context("Failed to connect to the smtp server")?;
-    log::info!("{}: Server banner {}", test_name, connection.server_info().name());
+    log::info!(
+        "{}: Server banner {}",
+        test_name,
+        connection.server_info().name()
+    );
     if let SmtpEncryption::STARTTLS = smtp.encryption {
         connection
             .starttls(
