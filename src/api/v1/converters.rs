@@ -1,8 +1,7 @@
-use crate::api::error::internal_server_error;
+use crate::api::error::{internal_server_error, CalpolApiError};
 use crate::database;
 use crate::database::RunnerLog;
 use calpol_model::api_v1::*;
-use http_api_problem::ApiError;
 use serde::__private::TryFrom;
 use std::net::IpAddr;
 
@@ -35,7 +34,7 @@ impl From<database::Session> for SessionSummary {
 }
 
 impl TryFrom<database::Test> for TestSummary {
-    type Error = ApiError;
+    type Error = CalpolApiError;
 
     fn try_from(test: database::Test) -> Result<Self, Self::Error> {
         let config = serde_json::from_value(test.config)

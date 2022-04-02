@@ -2,7 +2,7 @@ mod auth;
 mod error;
 mod v1;
 
-use crate::api::error::IntoApiError;
+use crate::api::error::CalpolApiError;
 use actix_ratelimit::{MemoryStore, MemoryStoreActor, RateLimiter};
 use actix_utils::ratelimit::RateLimiterBuilder;
 use actix_web::http::StatusCode;
@@ -14,26 +14,28 @@ use std::time::Duration;
 
 pub fn configure(api: &mut ServiceConfig, rate_limit_store: &MemoryStore) {
     api.app_data(
-        actix_web::web::PathConfig::default().error_handler(|e, _| e.into_api_error().into()),
+        actix_web::web::PathConfig::default().error_handler(|e, _| CalpolApiError::from(e).into()),
     );
     api.app_data(
-        actix_web_validator::QueryConfig::default().error_handler(|e, _| e.into_api_error().into()),
+        actix_web_validator::QueryConfig::default()
+            .error_handler(|e, _| CalpolApiError::from(e).into()),
     );
     api.app_data(
-        actix_web_validator::JsonConfig::default().error_handler(|e, _| e.into_api_error().into()),
+        actix_web_validator::JsonConfig::default()
+            .error_handler(|e, _| CalpolApiError::from(e).into()),
     );
     api.service(api_scope("v1").configure(|v1| v1::configure(v1, rate_limit_store)));
     api.service(api_resource("").route(web::get().to(index)));
 }
 
-pub fn response_mapper<T, E>(response: Result<T, E>) -> Result<HttpResponse, ApiError>
+pub fn response_mapper<T, E>(response: Result<T, E>) -> Result<HttpResponse, CalpolApiError>
 where
     T: Serialize,
-    E: IntoApiError,
+    E: Into<CalpolApiError>,
 {
     response
         .map(|value| HttpResponse::Ok().json(value))
-        .map_err(|e| e.into_api_error())
+        .map_err(|e| e.into())
 }
 
 fn api_scope(path: &str) -> actix_web::Scope {

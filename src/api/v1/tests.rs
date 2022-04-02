@@ -1,5 +1,4 @@
-use crate::api::error::MapDieselUniqueViolation;
-use crate::api::error::{ApiErrorMap, DieselTransactionError};
+use crate::api::error::{CalpolApiError, MapDieselUniqueViolation};
 use crate::api::{api_resource, response_mapper};
 use crate::database::{
     NewTest, Test, TestRepository, TestRepositoryImpl, TestResultRepository,
@@ -35,8 +34,7 @@ async fn list(state: Data<AppState>) -> impl Responder {
         let database = state.database();
         let test_repository = TestRepositoryImpl::new(&database);
         let tests: Result<Vec<_>, _> = test_repository
-            .find_all()
-            .map_api_error()?
+            .find_all()?
             .into_iter()
             .map(TestSummary::try_from)
             .collect();
@@ -65,6 +63,7 @@ async fn create(
                 ApiError::builder(StatusCode::CONFLICT)
                     .message("Test with this name already exists")
                     .finish()
+                    .into()
             })?;
         TestSummary::try_from(test)
     })
@@ -72,18 +71,16 @@ async fn create(
     .await
 }
 
-pub fn retrieve_test<'t, T>(test_repository: &T, test_name: &str) -> Result<Test, ApiError>
+pub fn retrieve_test<'t, T>(test_repository: &T, test_name: &str) -> Result<Test, CalpolApiError>
 where
     T: TestRepository + 't,
 {
-    test_repository
-        .find_by_name(test_name)
-        .map_api_error()?
-        .ok_or_else(|| {
-            ApiError::builder(StatusCode::NOT_FOUND)
-                .message("Test name not found")
-                .finish()
-        })
+    test_repository.find_by_name(test_name)?.ok_or_else(|| {
+        ApiError::builder(StatusCode::NOT_FOUND)
+            .message("Test name not found")
+            .finish()
+            .into()
+    })
 }
 
 async fn get(state: Data<AppState>, test_name: Path<String>) -> impl Responder {
@@ -116,7 +113,7 @@ async fn update(
         if let Some(failure_threshold) = body.failure_threshold {
             test.failure_threshold = failure_threshold as i32;
         }
-        test_repository.update(&test).map_api_error()?;
+        test_repository.update(&test)?;
         TestSummary::try_from(test)
     })
     .map(response_mapper)
@@ -124,18 +121,16 @@ async fn update(
 }
 
 async fn delete(test_name: Path<String>, state: Data<AppState>) -> impl Responder {
-    web::block(move || {
+    web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let test_repository = TestRepositoryImpl::new(&database);
         let test_results_repository = TestResultRepositoryImpl::new(&database);
         let test = retrieve_test(&test_repository, test_name.as_ref())?;
-        Ok(
-            database.transaction(|| -> Result<_, DieselTransactionError> {
-                test_results_repository.delete_all_belonging_to(&test)?;
-                test_repository.delete(test).map_api_error()?;
-                Ok(())
-            })?,
-        )
+        database.transaction(|| -> Result<_, CalpolApiError> {
+            test_results_repository.delete_all_belonging_to(&test)?;
+            test_repository.delete(test)?;
+            Ok(())
+        })
     })
     .map(response_mapper)
     .await

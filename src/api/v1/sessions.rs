@@ -1,5 +1,5 @@
 use crate::api::auth::{self, authenticator, Auth};
-use crate::api::error::ApiErrorMap;
+use crate::api::error::CalpolApiError;
 use crate::api::{api_resource, auth_rate_limiter, response_mapper};
 use crate::database::{
     NewSession, SessionRepository, SessionRepositoryImpl, UserRepository, UserRepositoryImpl,
@@ -46,51 +46,47 @@ async fn login(
     state: Data<AppState>,
     req: HttpRequest,
 ) -> impl Responder {
-    let ip_addr = req.connection_info().real_ip_address().map_api_error()?;
+    let ip_addr = req.connection_info().real_ip_address()?;
     let user_agent = auth::get_user_agent(req.headers())?;
-    web::block(move || {
+    web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let user_repository = UserRepositoryImpl::new(&database);
-        let user = user_repository
-            .find_by_email(&json.email)
-            .map_api_error()?
-            .ok_or_else(|| {
-                ApiError::builder(StatusCode::UNAUTHORIZED)
-                    .message("Incorrect email or password")
-                    .finish()
-            })?;
+        let user = user_repository.find_by_email(&json.email)?.ok_or_else(|| {
+            ApiError::builder(StatusCode::UNAUTHORIZED)
+                .message("Incorrect email or password")
+                .finish()
+        })?;
         let hashed = user.password_hash.as_ref().ok_or_else(|| {
             ApiError::builder(StatusCode::UNAUTHORIZED)
                 .message("You need to reset your account password")
                 .finish()
         })?;
-        if !(bcrypt::verify(&json.password, hashed).map_api_error()?) {
+        if !(bcrypt::verify(&json.password, hashed)?) {
             return Err(ApiError::builder(StatusCode::UNAUTHORIZED)
                 .message("Incorrect email or password")
-                .finish());
+                .finish()
+                .into());
         };
         let session_repository = SessionRepositoryImpl::new(&database);
         let ip_addr = ip_addr;
         let ip_bin = bincode::serialize(&ip_addr).unwrap();
-        let existing_session = session_repository
-            .find_belonging_to_user_by_ip_and_agent(&user, &ip_bin, &user_agent)
-            .map_api_error()?;
+        let existing_session = session_repository.find_belonging_to_user_by_ip_and_agent(
+            &user,
+            &ip_bin,
+            &user_agent,
+        )?;
         let session = match existing_session {
             Some(mut existing_session) => {
                 existing_session.last_used = Utc::now();
-                session_repository
-                    .update(&existing_session)
-                    .map_api_error()?;
+                session_repository.update(&existing_session)?;
                 existing_session
             }
-            None => session_repository
-                .insert(NewSession {
-                    user_id: user.id,
-                    token: auth::generate_token(&user),
-                    last_ip: ip_bin,
-                    user_agent,
-                })
-                .map_api_error()?,
+            None => session_repository.insert(NewSession {
+                user_id: user.id,
+                token: auth::generate_token(&user),
+                last_ip: ip_bin,
+                user_agent,
+            })?,
         };
         Ok(LoginResponse {
             user: user.into(),
@@ -103,10 +99,10 @@ async fn login(
 }
 
 async fn logout(auth: Auth, state: Data<AppState>) -> impl Responder {
-    web::block(move || {
+    web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let session_repository = SessionRepositoryImpl::new(&database);
-        session_repository.delete(auth.session).map_api_error()?;
+        session_repository.delete(auth.session)?;
         Ok(())
     })
     .map(response_mapper)
@@ -114,12 +110,11 @@ async fn logout(auth: Auth, state: Data<AppState>) -> impl Responder {
 }
 
 async fn list(auth: Auth, state: Data<AppState>) -> impl Responder {
-    web::block(move || {
+    web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let session_repository = SessionRepositoryImpl::new(&database);
         let sessions: Vec<SessionSummary> = session_repository
-            .find_all_belonging_to_user(&auth.user)
-            .map_api_error()?
+            .find_all_belonging_to_user(&auth.user)?
             .into_iter()
             .map(|s| s.into())
             .collect();
@@ -130,14 +125,11 @@ async fn list(auth: Auth, state: Data<AppState>) -> impl Responder {
 }
 
 async fn delete(auth: Auth, session_id: Path<i32>, state: Data<AppState>) -> impl Responder {
-    web::block(move || {
+    web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let session_repository = SessionRepositoryImpl::new(&database);
-        if !session_repository
-            .delete_by_id_and_user(*session_id, &auth.user)
-            .map_api_error()?
-        {
-            return Err(ApiError::new(StatusCode::NOT_FOUND));
+        if !session_repository.delete_by_id_and_user(*session_id, &auth.user)? {
+            return Err(ApiError::new(StatusCode::NOT_FOUND).into());
         }
         Ok(())
     })

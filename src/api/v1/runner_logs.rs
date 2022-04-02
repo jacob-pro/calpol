@@ -1,4 +1,4 @@
-use crate::api::error::ApiErrorMap;
+use crate::api::error::CalpolApiError;
 use crate::api::{api_resource, response_mapper};
 use crate::database::{RunnerLogRepository, RunnerLogRepositoryImpl};
 use crate::state::AppState;
@@ -15,12 +15,10 @@ async fn list(
     state: Data<AppState>,
     json: actix_web_validator::Json<ListRunnerLogsRequest>,
 ) -> impl Responder {
-    web::block(move || {
+    web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let log_repository = RunnerLogRepositoryImpl::new(&database);
-        let logs = log_repository
-            .find_all(json.limit, json.offset)
-            .map_api_error()?;
+        let logs = log_repository.find_all(json.limit, json.offset)?;
         let response = ListRunnerLogsResponse {
             logs: logs.results.into_iter().map(|l| l.into()).collect(),
             total: logs.count,

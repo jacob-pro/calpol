@@ -1,134 +1,120 @@
+use actix_utils::real_ip::RealIpAddressError;
+use actix_web::error::{BlockingError, PathError};
 use actix_web::http::StatusCode;
+use actix_web::ResponseError;
+use bcrypt::BcryptError;
 use http_api_problem::ApiError;
+use lettre::transport::smtp;
+use std::fmt::Debug;
 use thiserror::Error;
+use validator::ValidationErrors;
 
-pub trait ApiErrorMap<T> {
-    fn map_api_error(self) -> Result<T, ApiError>;
-}
+#[derive(Debug, Error)]
+#[error("{0}")]
+pub struct CalpolApiError(
+    #[source]
+    #[from]
+    ApiError,
+);
 
-impl<T, E: IntoApiError> ApiErrorMap<T> for Result<T, E> {
-    fn map_api_error(self) -> Result<T, ApiError> {
-        self.map_err(|e| e.into_api_error())
+impl ResponseError for CalpolApiError {
+    fn error_response(&self) -> actix_web::HttpResponse {
+        self.0.error_response()
     }
 }
 
-pub trait IntoApiError {
-    fn into_api_error(self) -> ApiError;
-}
-
-pub fn internal_server_error<E: std::fmt::Display>(prefix: &str, error: E) -> ApiError {
+pub fn internal_server_error<E: std::fmt::Display>(prefix: &str, error: E) -> CalpolApiError {
     let builder = ApiError::builder(StatusCode::INTERNAL_SERVER_ERROR);
-    if cfg!(debug_assertions) {
+    CalpolApiError(if cfg!(debug_assertions) {
         builder.message(format!("{}: {}", prefix, error)).finish()
     } else {
         builder.finish()
+    })
+}
+
+impl From<RealIpAddressError> for CalpolApiError {
+    fn from(e: RealIpAddressError) -> Self {
+        internal_server_error("RealIpAddressError", e)
     }
 }
 
-impl IntoApiError for actix_utils::real_ip::RealIpAddressError {
-    fn into_api_error(self) -> ApiError {
-        internal_server_error("RealIpAddressError", self)
+impl From<diesel::result::Error> for CalpolApiError {
+    fn from(e: diesel::result::Error) -> Self {
+        internal_server_error("DieselError", e)
     }
 }
 
-impl IntoApiError for diesel::result::Error {
-    fn into_api_error(self) -> ApiError {
-        internal_server_error("DieselError", self)
-    }
-}
-
-impl IntoApiError for actix_web::error::BlockingError<ApiError> {
-    fn into_api_error(self) -> ApiError {
-        match self {
-            actix_web::error::BlockingError::Error(e) => e,
-            actix_web::error::BlockingError::Canceled => {
-                internal_server_error("ActixBlockingError", self)
+impl<E: Into<CalpolApiError> + Debug> From<BlockingError<E>> for CalpolApiError {
+    fn from(e: BlockingError<E>) -> Self {
+        match e {
+            BlockingError::Error(e) => e.into(),
+            BlockingError::Canceled => {
+                internal_server_error("ActixBlockingError", CalpolApiError::from(e))
             }
         }
     }
 }
 
-impl IntoApiError for bcrypt::BcryptError {
-    fn into_api_error(self) -> ApiError {
-        internal_server_error("BcryptError", self)
+impl From<BcryptError> for CalpolApiError {
+    fn from(e: BcryptError) -> Self {
+        internal_server_error("BcryptError", e)
     }
 }
 
-impl IntoApiError for actix_web_validator::Error {
-    fn into_api_error(self) -> ApiError {
-        match self {
-            actix_web_validator::Error::Validate(v) => v.into_api_error(),
+impl From<actix_web_validator::Error> for CalpolApiError {
+    fn from(e: actix_web_validator::Error) -> Self {
+        match e {
+            actix_web_validator::Error::Validate(v) => v.into(),
             _ => ApiError::builder(StatusCode::BAD_REQUEST)
-                .message(format!("{}", self))
+                .message(format!("{}", e))
+                .finish()
+                .into(),
+        }
+    }
+}
+
+impl From<smtp::Error> for CalpolApiError {
+    fn from(e: smtp::Error) -> Self {
+        internal_server_error("SmtpError", e)
+    }
+}
+
+impl From<ValidationErrors> for CalpolApiError {
+    fn from(e: ValidationErrors) -> Self {
+        CalpolApiError(
+            ApiError::builder(StatusCode::BAD_REQUEST)
+                .message("One or more fields failed validation")
+                .field("invalid-params", e.into_errors())
                 .finish(),
-        }
+        )
     }
 }
 
-impl IntoApiError for lettre::transport::smtp::Error {
-    fn into_api_error(self) -> ApiError {
-        internal_server_error("SmtpError", self)
+impl From<PathError> for CalpolApiError {
+    fn from(e: PathError) -> Self {
+        CalpolApiError(
+            ApiError::builder(StatusCode::NOT_FOUND)
+                .message(format!("Unable to parse path parameter: {:#}", e))
+                .finish(),
+        )
     }
 }
 
-impl IntoApiError for validator::ValidationErrors {
-    fn into_api_error(self) -> ApiError {
-        ApiError::builder(StatusCode::BAD_REQUEST)
-            .message("One or more fields failed validation")
-            .field("invalid-params", self.into_errors())
-            .finish()
-    }
-}
-
-impl IntoApiError for actix_web::error::PathError {
-    fn into_api_error(self) -> ApiError {
-        ApiError::builder(StatusCode::NOT_FOUND)
-            .message(format!("Unable to parse path parameter: {:#}", self))
-            .finish()
-    }
-}
-
-impl IntoApiError for messagebird::Error {
-    fn into_api_error(self) -> ApiError {
-        internal_server_error("MessageBirdError", self)
-    }
-}
-
-// https://github.com/diesel-rs/diesel/issues/2342
-#[derive(Debug, Error)]
-pub enum DieselTransactionError {
-    #[error("Diesel error: {0}")]
-    DieselError(
-        #[from]
-        #[source]
-        diesel::result::Error,
-    ),
-    #[error("Api error: {0}")]
-    ApiError(
-        #[from]
-        #[source]
-        ApiError,
-    ),
-}
-
-impl From<DieselTransactionError> for ApiError {
-    fn from(err: DieselTransactionError) -> Self {
-        match err {
-            DieselTransactionError::DieselError(e) => e.into_api_error(),
-            DieselTransactionError::ApiError(e) => e,
-        }
+impl From<messagebird::Error> for CalpolApiError {
+    fn from(e: messagebird::Error) -> Self {
+        internal_server_error("MessageBirdError", e)
     }
 }
 
 pub trait MapDieselUniqueViolation<T, F> {
-    fn map_unique_violation(self, f: F) -> Result<T, ApiError>;
+    fn map_unique_violation(self, f: F) -> Result<T, CalpolApiError>;
 }
 
 impl<T, F> MapDieselUniqueViolation<T, F> for diesel::QueryResult<T>
 where
-    F: Fn(&dyn diesel::result::DatabaseErrorInformation) -> ApiError,
+    F: Fn(&dyn diesel::result::DatabaseErrorInformation) -> CalpolApiError,
 {
-    fn map_unique_violation(self, f: F) -> Result<T, ApiError> {
+    fn map_unique_violation(self, f: F) -> Result<T, CalpolApiError> {
         self.map_err(|e| {
             if let diesel::result::Error::DatabaseError(
                 diesel::result::DatabaseErrorKind::UniqueViolation,
@@ -137,14 +123,14 @@ where
             {
                 return f(m.as_ref());
             }
-            e.into_api_error()
+            CalpolApiError::from(e)
         })
     }
 }
 
 pub fn get_mailbox_for_user(
     user: &crate::database::User,
-) -> Result<lettre::message::Mailbox, ApiError> {
+) -> Result<lettre::message::Mailbox, CalpolApiError> {
     // This is an internal error because users with bad emails should never be created
     user.get_mailbox()
         .map_err(|e| internal_server_error("UserHasInvalidEmail", e))

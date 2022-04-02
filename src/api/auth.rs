@@ -1,4 +1,4 @@
-use crate::api::error::{internal_server_error, ApiErrorMap, IntoApiError};
+use crate::api::error::{internal_server_error, CalpolApiError};
 use crate::database::{Session, SessionRepository, SessionRepositoryImpl, User};
 use crate::state::AppState;
 use actix_utils::real_ip::RealIpExtension;
@@ -50,25 +50,28 @@ pub async fn authenticator(
         .app_data::<Data<AppState>>()
         .expect("AppState missing")
         .clone();
-    let ip_addr = req.connection_info().real_ip_address().map_api_error()?;
+    let ip_addr = req
+        .connection_info()
+        .real_ip_address()
+        .map_err(CalpolApiError::from)?;
     let user_agent = get_user_agent(req.headers())?;
-    let result = web::block(move || -> Result<_, ApiError> {
+    let result = web::block(move || -> Result<_, CalpolApiError> {
         let ip_addr = ip_addr;
         let ip_bin = bincode::serialize(&ip_addr).unwrap();
         let database = state.database();
         let session_repository = SessionRepositoryImpl::new(&database);
-        let (mut session, user) = session_repository
-            .find_by_token(auth.token())
-            .map_api_error()?
-            .ok_or_else(|| {
-                ApiError::builder(StatusCode::UNAUTHORIZED)
-                    .message("Invalid session token")
-                    .finish()
-            })?;
+        let (mut session, user) =
+            session_repository
+                .find_by_token(auth.token())?
+                .ok_or_else(|| {
+                    ApiError::builder(StatusCode::UNAUTHORIZED)
+                        .message("Invalid session token")
+                        .finish()
+                })?;
         session.last_ip = ip_bin;
         session.user_agent = user_agent;
         session.last_used = Utc::now();
-        session_repository.update(&session).map_api_error()?;
+        session_repository.update(&session)?;
         Ok(Auth { session, user })
     })
     .await;
@@ -77,11 +80,11 @@ pub async fn authenticator(
             req.extensions_mut().insert(auth);
             req
         })
-        .map_err(|e| e.into_api_error().into())
+        .map_err(|e| CalpolApiError::from(e).into())
 }
 
 impl FromRequest for Auth {
-    type Error = ApiError;
+    type Error = CalpolApiError;
     type Future = Ready<Result<Self, Self::Error>>;
     type Config = ();
 
