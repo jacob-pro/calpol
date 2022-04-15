@@ -1,47 +1,46 @@
 use crate::database::Test;
 use crate::test_runner::database::NotificationTargets;
-use crate::test_runner::RunnerContext;
+use crate::AppState;
 use anyhow::Context;
 use futures::future::join_all;
 use lettre::message::Mailbox;
 use lettre::{AsyncTransport, Message};
-use tokio_compat_02::FutureExt;
 
 const MAX_SMS_CHARS: usize = 70;
 
 pub async fn send_notifications(
     failed_tests: &[(Test, anyhow::Error)],
     targets: NotificationTargets,
-    ctx: &RunnerContext,
+    state: &AppState,
 ) -> anyhow::Result<()> {
     if failed_tests.is_empty() {
         return Ok(());
     }
     if !targets.sms.is_empty() {
         let body = create_sms_body(failed_tests);
-        send_sms_notifications(ctx, targets.sms, body).await?;
+        send_sms_notifications(state, targets.sms, body).await?;
     }
     if !targets.emails.is_empty() {
         let body = create_email_body(failed_tests);
-        send_email_notifications(ctx, targets.emails, body).await?;
+        send_email_notifications(state, targets.emails, body).await?;
     }
     Ok(())
 }
 
 async fn send_email_notifications(
-    ctx: &RunnerContext,
+    state: &AppState,
     emails: Vec<Mailbox>,
     message: String,
 ) -> anyhow::Result<()> {
     let results = join_all(emails.into_iter().map(|email| {
         let message = Message::builder()
             .to(email.clone())
-            .from(ctx.state.settings().mailer.send_from.clone())
-            .reply_to(ctx.state.settings().mailer.reply_to().clone())
+            .from(state.settings().mailer.send_from.clone())
+            .reply_to(state.settings().mailer.reply_to().clone())
             .subject("Calpol Test Failure")
             .body(message.clone())
             .unwrap();
-        async move { (ctx.mailer.send(message).await, email) }
+        async move { (state.mailer().send(message).await, email) }
     }))
     .await;
     for (result, mailbox) in results {
@@ -55,15 +54,14 @@ async fn send_email_notifications(
 }
 
 async fn send_sms_notifications(
-    ctx: &RunnerContext,
+    state: &AppState,
     phone_numbers: Vec<String>,
     message: String,
 ) -> anyhow::Result<()> {
-    if let Some(messagebird) = ctx.state.message_bird() {
+    if let Some(messagebird) = state.message_bird() {
         let count = phone_numbers.len();
         let result = messagebird
             .send_message(&message, phone_numbers)
-            .compat()
             .await
             .context("Failed sending SMS messages")?;
         log::info!("Sent {} sms messages: {:?}", count, result);

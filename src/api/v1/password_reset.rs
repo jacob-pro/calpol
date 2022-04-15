@@ -53,7 +53,7 @@ async fn request(
 ) -> impl Responder {
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
-        let mailer = state.mailer();
+        let mailer = state.mailer_old();
         let user_repository = UserRepositoryImpl::new(&database);
         let mut user = user_repository.find_by_email(&json.email)?.ok_or_else(|| {
             ApiError::builder(StatusCode::BAD_REQUEST)

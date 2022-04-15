@@ -66,7 +66,7 @@ pub async fn create(
 ) -> impl Responder {
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
-        let mailer = state.mailer();
+        let mailer = state.mailer_old();
         let user_repository = UserRepositoryImpl::new(&database);
         let mut user = user_repository
             .insert(NewUser {
@@ -114,7 +114,7 @@ async fn get(_auth: Auth, user_id: Path<i32>, state: Data<AppState>) -> impl Res
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let user_repository = UserRepositoryImpl::new(&database);
-        let user = retrieve_user(&user_repository, user_id.0)?;
+        let user = retrieve_user(&user_repository, *user_id)?;
         Ok(UserSummary::from(user))
     })
     .map(response_mapper)
@@ -130,7 +130,7 @@ async fn update(
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let user_repository = UserRepositoryImpl::new(&database);
-        let mut user = retrieve_user(&user_repository, user_id.0)?;
+        let mut user = retrieve_user(&user_repository, *user_id)?;
         if let Some(email) = &json.email {
             user.email = email.to_string().to_ascii_lowercase();
         }
@@ -187,7 +187,7 @@ async fn test_email(_auth: Auth, user_id: Path<i32>, state: Data<AppState>) -> i
             .subject("Calpol Test Email")
             .body("Calpol Test Email".to_string())
             .unwrap();
-        state.mailer().send(&message)?;
+        state.mailer_old().send(&message)?;
         Ok(())
     })
     .map(response_mapper)
@@ -204,7 +204,7 @@ async fn test_sms(
         let user_repository = UserRepositoryImpl::new(&database);
         retrieve_user(&user_repository, *user_id)
     })
-    .await?;
+    .await??;
     if let Some(phone) = user.phone_number {
         if let Some(messagebird) = state.message_bird() {
             let body = "Calpol Test SMS";

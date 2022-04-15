@@ -86,7 +86,7 @@ impl DomainExt for Domain {
             .collect::<Vec<_>>();
         let first = addr
             .first()
-            .ok_or(anyhow!("Url socket didn't resolve to matching IP Version"))?;
+            .ok_or_else(|| anyhow!("Url socket didn't resolve to matching IP Version"))?;
         Ok(*first)
     }
 
@@ -107,7 +107,7 @@ fn verify_certificate_expiry(der: Vec<u8>, minimum_expiry_hours: u16) -> anyhow:
     let expiry = Duration::from_std(
         cert.validity()
             .time_to_expiration()
-            .ok_or(anyhow!("Certificate has expired"))?,
+            .ok_or_else(|| anyhow!("Certificate has expired"))?,
     )
     .unwrap();
     if expiry < minimum_expiry {

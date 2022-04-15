@@ -1,15 +1,16 @@
-use crate::mailer::lettre_sync;
+use crate::mailer::{lettre_async, lettre_sync};
 use crate::settings::{MessageBirdSetting, Settings};
 use diesel::r2d2::ConnectionManager;
 use diesel::{r2d2, PgConnection};
-use lettre::SmtpTransport;
+use lettre::{AsyncSmtpTransport, SmtpTransport, Tokio1Executor};
 use messagebird::MessageBirdClient;
 use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct AppState {
     database: r2d2::Pool<ConnectionManager<PgConnection>>,
-    mailer: SmtpTransport,
+    mailer_old: SmtpTransport,
+    mailer: AsyncSmtpTransport<Tokio1Executor>,
     message_bird: Option<MessageBirdClient>,
     settings: Arc<Settings>,
 }
@@ -21,7 +22,8 @@ impl AppState {
     ) -> anyhow::Result<Self> {
         Ok(Self {
             database,
-            mailer: lettre_sync(&settings.mailer)?,
+            mailer_old: lettre_sync(&settings.mailer)?,
+            mailer: lettre_async(&settings.mailer)?,
             message_bird: message_bird_client(settings.message_bird.as_ref())?,
             settings,
         })
@@ -31,8 +33,12 @@ impl AppState {
         self.database.get().unwrap()
     }
 
-    pub fn mailer(&self) -> SmtpTransport {
-        self.mailer.clone()
+    pub fn mailer_old(&self) -> SmtpTransport {
+        self.mailer_old.clone()
+    }
+
+    pub fn mailer(&self) -> &AsyncSmtpTransport<Tokio1Executor> {
+        &self.mailer
     }
 
     pub fn settings(&self) -> &Arc<Settings> {

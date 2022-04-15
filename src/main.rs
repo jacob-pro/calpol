@@ -14,8 +14,8 @@ mod test_runner;
 
 use crate::database::{Connection, NewUser, UserRepositoryImpl};
 use crate::settings::Settings;
-use actix_ratelimit::MemoryStore;
-use actix_web::web::scope;
+use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
+use actix_web::web::{scope, Data};
 use actix_web::{middleware, App, HttpServer};
 use anyhow::Context;
 use calpol_model::api_v1::UserSummary;
@@ -70,12 +70,12 @@ async fn main() -> anyhow::Result<()> {
     match opts.subcommand {
         SubCommand::Server => {
             let state = AppState::new(Arc::clone(&settings), pool)?;
-            let rate_limit_store = MemoryStore::new();
+            let rl_backend = InMemoryBackend::builder().build();
             let runner = test_runner::start(state.clone()).fuse();
             let server = HttpServer::new(move || {
                 App::new()
-                    .data(state.clone())
-                    .service(scope("api").configure(|cfg| api::configure(cfg, &rate_limit_store)))
+                    .app_data(Data::new(state.clone()))
+                    .service(scope("api").configure(|cfg| api::configure(cfg, &rl_backend)))
                     .wrap(middleware::Logger::default())
             })
             .bind(&settings.api_socket)?

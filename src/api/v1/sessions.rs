@@ -5,8 +5,7 @@ use crate::database::{
     NewSession, SessionRepository, SessionRepositoryImpl, UserRepository, UserRepositoryImpl,
 };
 use crate::state::AppState;
-use actix_ratelimit::MemoryStore;
-use actix_utils::real_ip::RealIpExtension;
+use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path, ServiceConfig};
 use actix_web::{web, HttpRequest, Responder};
@@ -16,13 +15,14 @@ use chrono::Utc;
 use diesel_repository::CrudRepository;
 use futures::FutureExt;
 use http_api_problem::ApiError;
+use std::net::IpAddr;
 
-pub fn configure(sessions: &mut ServiceConfig, rate_limit_store: &MemoryStore) {
+pub fn configure(sessions: &mut ServiceConfig, rate_limit_backend: &InMemoryBackend) {
     let auth = HttpAuthentication::with_fn(authenticator);
     sessions.service(
         api_resource("login")
             .route(web::post().to(login))
-            .wrap(auth_rate_limiter(rate_limit_store)),
+            .wrap(auth_rate_limiter(rate_limit_backend)),
     );
     sessions.service(
         api_resource("logout")
@@ -46,7 +46,12 @@ async fn login(
     state: Data<AppState>,
     req: HttpRequest,
 ) -> impl Responder {
-    let ip_addr = req.connection_info().real_ip_address()?;
+    let ip_addr = req
+        .connection_info()
+        .realip_remote_addr()
+        .unwrap()
+        .parse::<IpAddr>()
+        .unwrap();
     let user_agent = auth::get_user_agent(req.headers())?;
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();

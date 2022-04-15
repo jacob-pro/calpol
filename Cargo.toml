@@ -14,11 +14,10 @@ authors = ["Jacob Halsey <jacob@jhalsey.com>"]
 description = "Multi-Service health monitor"
 
 [dependencies]
-actix-ratelimit = { version = "0.3.1", default-features = false, features = ["memory"] }
-actix-utils = { git = "https://github.com/jacob-pro/actix-utils", rev = "5efb6e2" }
-actix-web = "3"
-actix-web-httpauth = "0.5.1"
-actix-web-validator = "2.2.0"
+actix-extensible-rate-limit = "0.1.0"
+actix-web = "4.0.1"
+actix-web-httpauth = "0.6.0"
+actix-web-validator = "3.0.0"
 anyhow = "1.0.52"
 async-trait = "0.1.52"
 base64 = "0.13.0"
@@ -34,11 +33,11 @@ diesel-postgres = { git = "https://github.com/jacob-pro/diesel-postgres", rev = 
 diesel-repository = { git = "https://github.com/jacob-pro/diesel-repository.git", rev = "058c63b" }
 diesel_migrations = "1.4.0"
 env_logger = "0.8.4"
-futures = "0.3.19"
+futures = "0.3.21"
 getrandom = "0.2.3"
 http = "0.2.6"
-http-api-problem = { version = "0.51.0", features = ["actix-web", "api-error"] }
-lettre = { git = "https://github.com/lettre/lettre", rev = "29c34ad", features = ["pool", "serde", "tokio1", "tokio1-native-tls"] }
+http-api-problem = { features = ["actix-web", "api-error"], git = "https://github.com/jacob-pro/http-api-problem" }
+lettre = { version = "0.10.0-rc.5", features = ["pool", "serde", "tokio1", "tokio1-native-tls"] }
 log = "0.4.14"
 messagebird = { path = "./messagebird" }
 native-tls = "0.2.8"
@@ -49,9 +48,8 @@ serde_plain = "1.0.0"
 socket2 = "0.4.2"
 thiserror = "1.0.30"
 tokio = { version = "1.15.0", features = ["rt-multi-thread"] }
-tokio-compat-02 = "0.2"
 trust-dns-resolver = "0.20.3"
 twilio = "1.0.0"
 url = { version = "2.2.2", features = ["serde"] }
-validator = { version = "0.12", features = ["derive"] }
+validator = { version = "0.14.0", features = ["derive"] }
 x509-parser = "0.12.0"

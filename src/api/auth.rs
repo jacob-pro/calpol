@@ -1,10 +1,9 @@
 use crate::api::error::{internal_server_error, CalpolApiError};
 use crate::database::{Session, SessionRepository, SessionRepositoryImpl, User};
 use crate::state::AppState;
-use actix_utils::real_ip::RealIpExtension;
 use actix_web::dev::{Payload, ServiceRequest};
-use actix_web::http::header::USER_AGENT;
-use actix_web::http::{HeaderMap, StatusCode};
+use actix_web::http::header::{HeaderMap, USER_AGENT};
+use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{web, FromRequest, HttpMessage, HttpRequest};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
@@ -12,6 +11,7 @@ use chrono::Utc;
 use diesel_repository::CrudRepository;
 use futures::future::{err, ok, Ready};
 use http_api_problem::ApiError;
+use std::net::IpAddr;
 
 pub struct Auth {
     pub session: Session,
@@ -41,19 +41,25 @@ pub fn generate_token(user: &User) -> String {
     format!("{}_{}", user.id, base64::encode(&buf))
 }
 
-// TODO: In HttpAuthentication v0.6 we can use Option<BearerAuth> and specify our own error
 pub async fn authenticator(
     req: ServiceRequest,
-    auth: BearerAuth,
+    auth: Option<BearerAuth>,
 ) -> Result<ServiceRequest, actix_web::Error> {
+    let auth = auth.ok_or_else(|| {
+        ApiError::builder(StatusCode::UNAUTHORIZED)
+            .message("Missing bearer token")
+            .finish()
+    })?;
     let state = req
         .app_data::<Data<AppState>>()
         .expect("AppState missing")
         .clone();
     let ip_addr = req
         .connection_info()
-        .real_ip_address()
-        .map_err(CalpolApiError::from)?;
+        .realip_remote_addr()
+        .unwrap()
+        .parse::<IpAddr>()
+        .unwrap();
     let user_agent = get_user_agent(req.headers())?;
     let result = web::block(move || -> Result<_, CalpolApiError> {
         let ip_addr = ip_addr;
@@ -86,7 +92,6 @@ pub async fn authenticator(
 impl FromRequest for Auth {
     type Error = CalpolApiError;
     type Future = Ready<Result<Self, Self::Error>>;
-    type Config = ();
 
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
         if let Some(user) = req.extensions_mut().remove::<Auth>() {

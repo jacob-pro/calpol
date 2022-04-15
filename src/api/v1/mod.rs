@@ -8,13 +8,13 @@ mod users;
 
 use crate::api::auth::authenticator;
 use crate::api::{api_scope, auth_rate_limiter};
-use actix_ratelimit::MemoryStore;
+use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
 use actix_web::web::ServiceConfig;
 use actix_web_httpauth::middleware::HttpAuthentication;
 
-pub fn configure(v1: &mut ServiceConfig, rate_limit_store: &MemoryStore) {
+pub fn configure(v1: &mut ServiceConfig, rate_limit_backend: &InMemoryBackend) {
     let auth = HttpAuthentication::with_fn(authenticator);
-    v1.service(api_scope("sessions").configure(|c| sessions::configure(c, rate_limit_store)));
+    v1.service(api_scope("sessions").configure(|c| sessions::configure(c, rate_limit_backend)));
     v1.service(
         api_scope("users")
             .configure(users::configure)
@@ -23,7 +23,7 @@ pub fn configure(v1: &mut ServiceConfig, rate_limit_store: &MemoryStore) {
     v1.service(
         api_scope("password_reset")
             .configure(password_reset::configure)
-            .wrap(auth_rate_limiter(rate_limit_store)),
+            .wrap(auth_rate_limiter(rate_limit_backend)),
     );
     v1.service(
         api_scope("tests")

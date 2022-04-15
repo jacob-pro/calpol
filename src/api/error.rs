@@ -1,4 +1,3 @@
-use actix_utils::real_ip::RealIpAddressError;
 use actix_web::error::{BlockingError, PathError};
 use actix_web::http::StatusCode;
 use actix_web::ResponseError;
@@ -32,26 +31,15 @@ pub fn internal_server_error<E: std::fmt::Display>(prefix: &str, error: E) -> Ca
     })
 }
 
-impl From<RealIpAddressError> for CalpolApiError {
-    fn from(e: RealIpAddressError) -> Self {
-        internal_server_error("RealIpAddressError", e)
-    }
-}
-
 impl From<diesel::result::Error> for CalpolApiError {
     fn from(e: diesel::result::Error) -> Self {
         internal_server_error("DieselError", e)
     }
 }
 
-impl<E: Into<CalpolApiError> + Debug> From<BlockingError<E>> for CalpolApiError {
-    fn from(e: BlockingError<E>) -> Self {
-        match e {
-            BlockingError::Error(e) => e.into(),
-            BlockingError::Canceled => {
-                internal_server_error("ActixBlockingError", CalpolApiError::from(e))
-            }
-        }
+impl From<BlockingError> for CalpolApiError {
+    fn from(e: BlockingError) -> Self {
+        internal_server_error("ActixBlockingError", e)
     }
 }
 
