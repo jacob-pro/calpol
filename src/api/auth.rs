@@ -61,7 +61,7 @@ pub async fn authenticator(
         .parse::<IpAddr>()
         .unwrap();
     let user_agent = get_user_agent(req.headers())?;
-    let result = web::block(move || -> Result<_, CalpolApiError> {
+    let auth = web::block(move || -> Result<_, CalpolApiError> {
         let ip_addr = ip_addr;
         let ip_bin = bincode::serialize(&ip_addr).unwrap();
         let database = state.database();
@@ -80,13 +80,9 @@ pub async fn authenticator(
         session_repository.update(&session)?;
         Ok(Auth { session, user })
     })
-    .await;
-    result
-        .map(|auth| {
-            req.extensions_mut().insert(auth);
-            req
-        })
-        .map_err(|e| CalpolApiError::from(e).into())
+    .await??;
+    req.extensions_mut().insert(auth);
+    Ok(req)
 }
 
 impl FromRequest for Auth {
