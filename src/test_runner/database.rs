@@ -18,13 +18,13 @@ impl RunnerSetting {
     }
 }
 
-pub async fn write_runner_log(
+/// Inserts run results into the database.
+pub async fn insert_runner_log(
     database: Connection,
-    settings: Arc<Settings>,
     result: anyhow::Result<RunResults>,
     start_time: DateTime<Utc>,
-) {
-    if let Err(e) = spawn_blocking(move || {
+) -> anyhow::Result<()> {
+    spawn_blocking(move || -> anyhow::Result<()> {
         let runner_log_repository = RunnerLogRepositoryImpl::new(&database);
         let mut log = NewRunnerLog {
             time_started: start_time,
@@ -33,7 +33,7 @@ pub async fn write_runner_log(
             failure_reason: None,
             tests_passed: None,
             tests_failed: None,
-            tests_skipped: None
+            tests_skipped: None,
         };
         let duration = log.time_finished - log.time_started;
         match result {
@@ -60,19 +60,13 @@ pub async fn write_runner_log(
                 );
             }
         }
-        if let Err(e) = runner_log_repository.insert(log) {
-            log::error!("Failed to write runner log to the database: {:#}", e);
-        }
-        if let Err(e) = runner_log_repository.delete_all_older_than(settings.runner.minimum_log_age()) {
-            log::error!("Failed to clean old runner logs: {:#}", e);
-        }
-    })
-    .await {
-        log::error!("Failed to spawn runner log task: {}", e);
-    }
+        runner_log_repository.insert(log)?;
+        Ok(())
+    }).await?
 }
 
-pub async fn get_tests(database: Connection) -> anyhow::Result<Vec<Test>> {
+/// Retrieves all tests (including disabled) from the database.
+pub async fn retrieve_tests(database: Connection) -> anyhow::Result<Vec<Test>> {
     spawn_blocking(move || {
         let test_repository = TestRepositoryImpl::new(&database);
         test_repository.find_all().context("Failed to load tests")
@@ -80,15 +74,21 @@ pub async fn get_tests(database: Connection) -> anyhow::Result<Vec<Test>> {
     .await?
 }
 
-/// Updates the database state, returns only the tests that have transitioned to a failing state
-pub async fn process_test_results(
+pub struct ProcessedTests {
+    /// Tests that were previously failing but have now transitioned to a passing state.
+    pub now_passing: Vec<Test>,
+    /// Tests that were previously passing but have now transitioned into a failing state.
+    /// Includes the latest error indicating why they are failing.
+    pub now_failing: Vec<(Test, anyhow::Error)>,
+}
+
+/// Inserts test results into the database, and retrieves the new status of the tests
+pub async fn insert_test_results(
     database: Connection,
-    settings: Arc<Settings>,
     results: Vec<(Test, RunResult)>,
-) -> anyhow::Result<Vec<(Test, anyhow::Error)>> {
+) -> anyhow::Result<ProcessedTests> {
     spawn_blocking(move || -> anyhow::Result<_> {
         let test_result_repository = TestResultRepositoryImpl::new(&database);
-        let test_repository = TestRepositoryImpl::new(&database);
 
         // Write the result of this test run to the database
         for (test, result) in &results {
@@ -107,9 +107,6 @@ pub async fn process_test_results(
                 );
             }).context("Failed to insert test result")?;
         }
-        test_result_repository
-            .delete_all_older_than(settings.runner.minimum_log_age())
-            .context("Failed to delete old test results")?;
 
         // Check the most recent test results to determine if the test has reached the failure threshold
         let results = results.into_iter().map(|(test, result)| {
@@ -121,37 +118,47 @@ pub async fn process_test_results(
             Ok((test, result, failing))
         }).collect::<anyhow::Result<Vec<_>>>()?;
 
-        // Find previously failing tests that have now transitioned to a non failing state and update the database
+        // Filter tests that have now transitioned to a passing state
         let (now_passing, remaining): (Vec<_>, Vec<_>) = results.into_iter()
             .partition(|(test, _, failing_now)| {
+                // Was previously failing, but is now passing
                 test.failing && !(*failing_now)
             });
-        for (mut test, _, _) in now_passing {
-            test.failing = false;
-            test_repository.update(&test).context("Updating test state to passing")?;
-        }
 
-        // Filter tests that weren't failing before but have now transitioned into a failing state
+        // Filter tests that have now transitioned into a failing state
         let now_failing = remaining.into_iter()
             .filter(|(test, _, failing_now)| {
+                // Was previously passing, but is now failing
                 !test.failing && *failing_now
             }).map(|(test, result, _)| (test, result.result.err().unwrap())).collect();
 
-        Ok(now_failing)
+        Ok(ProcessedTests {
+            now_passing: now_passing.into_iter().map(|x| x.0).collect(),
+            now_failing
+        })
     })
     .await?
 }
 
-/// Mark tests as failing in the database.\
-/// This should be done only once notifications have been successfully sent
-pub async fn mark_tests_as_failing(database: Connection, failed: Vec<Test>) -> anyhow::Result<()> {
+/// Mark tests as passing / failing in the database.
+/// This should be done only once notifications have been successfully sent.
+pub async fn update_test_status(
+    database: Connection,
+    processed: ProcessedTests,
+) -> anyhow::Result<()> {
     spawn_blocking(move || -> anyhow::Result<()> {
         let test_repository = TestRepositoryImpl::new(&database);
-        for mut test in failed {
+        for (mut test, _) in processed.now_failing {
             test.failing = true;
             test_repository
                 .update(&test)
                 .context("Updating test state to failing")?;
+        }
+        for mut test in processed.now_passing {
+            test.failing = false;
+            test_repository
+                .update(&test)
+                .context("Updating test state to passing")?;
         }
         Ok(())
     })
@@ -185,6 +192,7 @@ pub struct NotificationTargets {
     pub sms: Vec<String>,
 }
 
+/// Fetches a list of emails and phone numbers that need to be notified of test results
 pub async fn fetch_notification_targets(
     database: Connection,
 ) -> anyhow::Result<NotificationTargets> {
@@ -205,6 +213,29 @@ pub async fn fetch_notification_targets(
             }
         }
         Ok(targets)
+    })
+    .await?
+}
+
+/// Cleans up test results and runner logs that are older than the minimum log age.
+pub async fn delete_expired_records(
+    database: Connection,
+    settings: Arc<Settings>,
+) -> anyhow::Result<()> {
+    spawn_blocking(move || -> anyhow::Result<_> {
+        let test_result_repository = TestResultRepositoryImpl::new(&database);
+        test_result_repository
+            .delete_all_older_than(settings.runner.minimum_log_age())
+            .context("Failed to delete old test results")?;
+
+        let runner_log_repository = RunnerLogRepositoryImpl::new(&database);
+        if let Err(e) =
+            runner_log_repository.delete_all_older_than(settings.runner.minimum_log_age())
+        {
+            log::error!("Failed to clean old runner logs: {:#}", e);
+        }
+
+        Ok(())
     })
     .await?
 }
