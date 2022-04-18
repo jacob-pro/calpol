@@ -1,23 +1,23 @@
-use crate::test_runner::runnable::{verify_certificate_expiry, DomainExt};
+use crate::test_runner::runnable::{verify_certificate_expiry, Domain};
 use anyhow::bail;
 use anyhow::Context;
 use calpol_model::tests::Http;
 use http::method::Method;
-use native_tls::TlsConnector;
 use reqwest::redirect;
-use socket2::{Domain, Socket, Type};
-use std::net::TcpStream;
 use std::str::FromStr;
-use tokio::task::spawn_blocking;
+use std::time::Duration;
+use tokio::time::timeout;
+use tokio_native_tls::TlsConnector;
 use url::Url;
 
-const HTTP_TIMEOUT_SEC: u64 = 5;
+const HTTP_TIMEOUT: Duration = Duration::from_secs(5);
+const TLS_TIMEOUT: Duration = Duration::from_secs(5);
 
 pub async fn test_http(http: &Http, net_domain: Domain) -> anyhow::Result<()> {
     let client = reqwest::ClientBuilder::default()
         .danger_accept_invalid_certs(!http.verify_ssl)
         .local_address(net_domain.local_address())
-        .timeout(std::time::Duration::from_secs(HTTP_TIMEOUT_SEC))
+        .timeout(HTTP_TIMEOUT)
         .user_agent(format!("calpol-test-server {}", env!("CARGO_PKG_VERSION")))
         .redirect(if http.follow_redirects {
             redirect::Policy::default()
@@ -67,32 +67,35 @@ async fn do_certificate_test(
     domain: Domain,
     minimum_certificate_expiry_hours: u16,
 ) -> anyhow::Result<()> {
-    spawn_blocking(move || -> anyhow::Result<()> {
-        let addr = domain.socket_addr_for_url(&url)?;
-        let stream = Socket::new(domain, Type::STREAM, None).context("Failed to create socket")?;
-        stream
-            .connect_timeout(
-                &addr.into(),
-                std::time::Duration::from_secs(HTTP_TIMEOUT_SEC),
-            )
-            .context(format!("Failed to connect socket {}", addr))?;
-        let connector = TlsConnector::builder()
+    let socket = domain.tcp_socket()?;
+    let connector = TlsConnector::from(
+        tokio_native_tls::native_tls::TlsConnector::builder()
             .danger_accept_invalid_certs(!verify)
             .build()
-            .context("Failed to build TlsConnector")?;
-        let host = url.host_str().context("URL missing host")?;
-        let stream = connector
-            .connect(host, TcpStream::from(stream))
-            .context("Failed to establish TLS stream")?;
-        let der = stream
-            .peer_certificate()
-            .context("Failed to get peer certificate")?
-            .unwrap()
-            .to_der()
-            .unwrap();
-        verify_certificate_expiry(der, minimum_certificate_expiry_hours)?;
-        Ok(())
-    })
-    .await
-    .context("Failed to spawn certificate task")?
+            .context("Failed to build TlsConnector")?,
+    );
+
+    let addr = domain.socket_addr_for_url(&url)?;
+    let host = url.host_str().context("URL missing host")?;
+
+    let stream = timeout(HTTP_TIMEOUT, socket.connect(addr))
+        .await
+        .context("Socket timed out")?
+        .context("Failed to establish TCP stream")?;
+
+    let stream = timeout(TLS_TIMEOUT, connector.connect(host, stream))
+        .await
+        .context("TLS timed out")?
+        .context("Failed to establish TLS stream")?;
+
+    let der = stream
+        .get_ref()
+        .peer_certificate()
+        .context("Failed to get peer certificate")?
+        .unwrap()
+        .to_der()
+        .unwrap();
+    verify_certificate_expiry(der, minimum_certificate_expiry_hours)?;
+
+    Ok(())
 }

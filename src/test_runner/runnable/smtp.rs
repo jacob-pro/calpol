@@ -1,15 +1,14 @@
-use crate::test_runner::runnable::verify_certificate_expiry;
-use anyhow::{anyhow, bail, Context};
+use crate::test_runner::runnable::{verify_certificate_expiry, Domain};
+use anyhow::{bail, Context};
 use calpol_model::tests::{Smtp, SmtpEncryption, SmtpServerType};
 use lettre::transport::smtp::client::{AsyncSmtpConnection, TlsParameters};
 use lettre::transport::smtp::extension::ClientId;
-use socket2::Domain;
 use std::time::Duration;
 use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 use trust_dns_resolver::AsyncResolver;
 
-const SMTP_CONNECT_TIMEOUT_SEC: u64 = 10;
-const DNS_TIMEOUT_SEC: u64 = 5;
+const SMTP_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+const DNS_TIMEOUT: Duration = Duration::from_secs(5);
 
 pub async fn test_smtp(smtp: &Smtp, _domain: Domain, test_name: &str) -> anyhow::Result<()> {
     // TODO: Use correct net domain: https://github.com/lettre/lettre/issues/715
@@ -24,7 +23,7 @@ pub async fn test_smtp(smtp: &Smtp, _domain: Domain, test_name: &str) -> anyhow:
     };
     let mut connection = AsyncSmtpConnection::connect_tokio1(
         (host.clone(), port),
-        Some(Duration::from_secs(SMTP_CONNECT_TIMEOUT_SEC)),
+        Some(SMTP_CONNECT_TIMEOUT),
         &client_id,
         tls_parameters,
     )
@@ -61,11 +60,10 @@ pub async fn test_smtp(smtp: &Smtp, _domain: Domain, test_name: &str) -> anyhow:
 
 async fn get_host(smtp: &Smtp) -> anyhow::Result<String> {
     Ok(if let SmtpServerType::MailTransferAgent = smtp.r#type {
-        let mut opts = ResolverOpts {
-            timeout: Duration::from_secs(5),
+        let opts = ResolverOpts {
+            timeout: DNS_TIMEOUT,
             ..Default::default()
         };
-        opts.timeout = Duration::from_secs(DNS_TIMEOUT_SEC);
         let resolver = AsyncResolver::tokio(ResolverConfig::google(), opts)
             .context("Failed to get resolver")?;
         let mx_results = resolver
@@ -75,7 +73,7 @@ async fn get_host(smtp: &Smtp) -> anyhow::Result<String> {
         let mut exchange = mx_results
             .iter()
             .next()
-            .ok_or_else(|| anyhow!("No mx records found"))?
+            .context("No mx records found")?
             .exchange()
             .to_utf8();
         // If domain ends with a dot it breaks the certificate hostname verification

@@ -5,12 +5,13 @@ mod tcp;
 use crate::test_runner::runnable::http::test_http;
 use crate::test_runner::runnable::smtp::test_smtp;
 use crate::test_runner::runnable::tcp::test_tcp;
-use anyhow::{anyhow, bail, Context};
+use anyhow::{bail, Context};
 use async_trait::async_trait;
 use calpol_model::tests::{IpVersion, TestConfig, TestVariant};
 use chrono::Duration;
-use socket2::Domain;
+use std::fmt::{Display, Formatter};
 use std::net::{IpAddr, SocketAddr};
+use tokio::net::TcpSocket;
 use url::Url;
 use x509_parser::certificate::X509Certificate;
 use x509_parser::traits::FromDer;
@@ -26,7 +27,7 @@ impl Runnable for TestConfig {
         for net_domain in Domain::from_model(self.ip_version) {
             run_variant(&self.variant, net_domain, test_name)
                 .await
-                .context(format!("({})", net_domain.name()))?
+                .context(format!("({})", net_domain))?
         }
         Ok(())
     }
@@ -45,56 +46,53 @@ async fn run_variant(
     Ok(())
 }
 
-trait DomainExt
-where
-    Self: Sized,
-{
-    fn local_address(self) -> IpAddr;
-    fn from_model(version: IpVersion) -> Vec<Self>;
-    fn socket_addr_for_url(self, url: &Url) -> anyhow::Result<SocketAddr>;
-    fn name(self) -> &'static str;
+#[derive(Clone, Copy, Debug)]
+pub enum Domain {
+    IpV4,
+    IpV6,
 }
 
-impl DomainExt for Domain {
+impl Domain {
     /// https://github.com/seanmonstar/reqwest/issues/584
     fn local_address(self) -> IpAddr {
         match self {
-            Domain::IPV4 => "0.0.0.0".parse().unwrap(),
-            Domain::IPV6 => "::".parse().unwrap(),
-            _ => panic!("unknown domain"),
+            Domain::IpV4 => "0.0.0.0".parse().unwrap(),
+            Domain::IpV6 => "::".parse().unwrap(),
         }
     }
 
     fn from_model(version: IpVersion) -> Vec<Self> {
         match version {
-            IpVersion::V4 => vec![Domain::IPV4],
-            IpVersion::V6 => vec![Domain::IPV6],
-            IpVersion::Both => vec![Domain::IPV4, Domain::IPV6],
+            IpVersion::V4 => vec![Domain::IpV4],
+            IpVersion::V6 => vec![Domain::IpV6],
+            IpVersion::Both => vec![Domain::IpV4, Domain::IpV6],
         }
     }
 
     fn socket_addr_for_url(self, url: &Url) -> anyhow::Result<SocketAddr> {
-        let addr = url
-            .socket_addrs(|| None)
-            .context("Failed to get address from url")?
+        url.socket_addrs(|| None)
+            .context("Failed to resolve socket address")?
             .into_iter()
-            .filter(|addr| match self {
-                Domain::IPV4 => addr.is_ipv4(),
-                Domain::IPV6 => addr.is_ipv6(),
-                _ => false,
+            .find(|addr| match self {
+                Domain::IpV4 => addr.is_ipv4(),
+                Domain::IpV6 => addr.is_ipv6(),
             })
-            .collect::<Vec<_>>();
-        let first = addr
-            .first()
-            .ok_or_else(|| anyhow!("Url socket didn't resolve to matching IP Version"))?;
-        Ok(*first)
+            .context("Failed to resolve socket address")
     }
 
-    fn name(self) -> &'static str {
+    fn tcp_socket(self) -> anyhow::Result<TcpSocket> {
+        Ok(match self {
+            Domain::IpV4 => TcpSocket::new_v4()?,
+            Domain::IpV6 => TcpSocket::new_v6()?,
+        })
+    }
+}
+
+impl Display for Domain {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Domain::IPV4 => "IPV4",
-            Domain::IPV6 => "IPV6",
-            _ => panic!("unknown domain"),
+            Domain::IpV4 => f.write_str("IPV4"),
+            Domain::IpV6 => f.write_str("IPV6"),
         }
     }
 }
@@ -107,7 +105,7 @@ fn verify_certificate_expiry(der: Vec<u8>, minimum_expiry_hours: u16) -> anyhow:
     let expiry = Duration::from_std(
         cert.validity()
             .time_to_expiration()
-            .ok_or_else(|| anyhow!("Certificate has expired"))?,
+            .context("Certificate has expired")?,
     )
     .unwrap();
     if expiry < minimum_expiry {

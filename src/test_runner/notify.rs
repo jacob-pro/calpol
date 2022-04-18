@@ -135,7 +135,7 @@ fn create_email_failure_body(tests: &[(Test, anyhow::Error)]) -> String {
 fn create_email_passing_body(tests: &[Test]) -> String {
     let mut message = format!("Calpol: {} tests now passing\n\n", tests.len());
     for t in tests {
-        message.push_str(&t.name);
+        message.push_str(&format!("{}\n", t.name));
     }
     message
 }
