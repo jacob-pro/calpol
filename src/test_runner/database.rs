@@ -3,7 +3,7 @@ use crate::database::{
     TestRepositoryImpl, TestResultRepository, TestResultRepositoryImpl, UserRepositoryImpl,
 };
 use crate::settings::{RunnerSetting, Settings};
-use crate::test_runner::{RunResult, RunResults};
+use crate::test_runner::{RunResults, TestRunResult};
 use anyhow::Context;
 use chrono::{DateTime, Duration, Utc};
 use diesel::QueryResult;
@@ -85,7 +85,7 @@ pub struct ProcessedTests {
 /// Inserts test results into the database, and retrieves the new status of the tests
 pub async fn insert_test_results(
     database: Connection,
-    results: Vec<(Test, RunResult)>,
+    results: Vec<(Test, TestRunResult)>,
 ) -> anyhow::Result<ProcessedTests> {
     spawn_blocking(move || -> anyhow::Result<_> {
         let test_result_repository = TestResultRepositoryImpl::new(&database);

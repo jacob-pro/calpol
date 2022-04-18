@@ -27,7 +27,6 @@ calpol-model = { path = "./calpol-model", features = ["validation"] }
 chrono = "0.4"
 clap = { version = "=3.0.0-rc.8", features = ["derive", "env"] }
 config = { version = "0.11", features = ["toml"] }
-derive-new = "0.5"
 diesel = { version = "1.4.8", features = ["postgres", "r2d2", "chrono", "serde_json"] }
 diesel-postgres = { git = "https://github.com/jacob-pro/diesel-postgres", rev = "a73ad0b" }
 diesel-repository = { git = "https://github.com/jacob-pro/diesel-repository.git", rev = "058c63b" }

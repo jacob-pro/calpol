@@ -8,7 +8,6 @@ use crate::test_runner::runnable::Runnable;
 use anyhow::Context;
 use calpol_model::tests::TestConfig;
 use chrono::{DateTime, Utc};
-use derive_new::new;
 use futures::{stream, StreamExt};
 use tokio::sync::mpsc;
 use tokio::time::{sleep_until, timeout_at, Instant};
@@ -30,73 +29,86 @@ pub async fn start(state: AppState, mut rx: mpsc::Receiver<()>) -> anyhow::Resul
         let next_run = start_instant + state.settings.runner.interval_duration();
         tokio::select! {
             _ = sleep_until(next_run) => {},
+            // Allows waking up early to immediately re-run tests
             message = rx.recv() => {message.unwrap()}
         }
     }
 }
 
-#[derive(new)]
 pub struct RunResults {
     passed: usize,
     failed: usize,
     skipped: usize,
 }
 
-pub struct RunResult {
+pub struct TestRunResult {
     started: DateTime<Utc>,
     finished: DateTime<Utc>,
     result: anyhow::Result<()>,
 }
 
 async fn run_tests(state: &AppState, timeout: Instant) -> anyhow::Result<RunResults> {
-    let tests = database::retrieve_tests(state.database()).await?;
-    let skipped = tests.iter().filter(|t| !t.enabled).count();
-    let results = stream::iter(tests.into_iter().filter(|t| t.enabled).map(
-        |test| -> (_, anyhow::Result<TestConfig>) {
+    // Retrieve disabled and enabled tests from the database
+    let (disabled, enabled): (Vec<_>, Vec<_>) = database::retrieve_tests(state.database())
+        .await?
+        .into_iter()
+        .partition(|test| !test.enabled);
+
+    // Deserialize the test config JSON
+    let deserialized = enabled
+        .into_iter()
+        .map(|test| -> (_, anyhow::Result<TestConfig>) {
             let config = test.config.clone();
             (
                 test,
                 serde_json::from_value(config).context("Failed to deserialize test config"),
             )
-        },
-    ))
-    .map(|(test, config)| async move {
-        let run_result = match config {
-            Ok(c) => {
-                let started = Utc::now();
-                let result = timeout_at(timeout, c.run(&test.name))
-                    .await
-                    .context("Cancelled due to global test timeout")
-                    .and_then(std::convert::identity);
-                RunResult {
-                    started,
-                    finished: Utc::now(),
-                    result,
+        });
+
+    // Run the tests
+    let results = stream::iter(deserialized)
+        .map(|(test, config)| async move {
+            let run_result = match config {
+                Ok(c) => {
+                    let started = Utc::now();
+                    let result = timeout_at(timeout, c.run(&test.name))
+                        .await
+                        .context("Cancelled due to global test timeout")
+                        .and_then(std::convert::identity);
+                    TestRunResult {
+                        started,
+                        finished: Utc::now(),
+                        result,
+                    }
                 }
-            }
-            Err(e) => RunResult {
-                started: Utc::now(),
-                finished: Utc::now(),
-                result: Err(e),
-            },
-        };
-        (test, run_result)
-    })
-    .buffer_unordered(state.settings.runner.concurrency as usize)
-    .collect::<Vec<(Test, RunResult)>>()
-    .await;
-    let passed = results.iter().filter(|(_, r)| r.result.is_ok()).count();
-    let failed = results.iter().filter(|(_, r)| r.result.is_err()).count();
+                Err(e) => TestRunResult {
+                    started: Utc::now(),
+                    finished: Utc::now(),
+                    result: Err(e),
+                },
+            };
+            (test, run_result)
+        })
+        .buffer_unordered(state.settings.runner.concurrency as usize)
+        .collect::<Vec<(Test, TestRunResult)>>()
+        .await;
+
+    // Count the types of results
+    let run_results = RunResults {
+        passed: results.iter().filter(|(_, r)| r.result.is_ok()).count(),
+        failed: results.iter().filter(|(_, r)| r.result.is_err()).count(),
+        skipped: disabled.len(),
+    };
 
     let processed = database::insert_test_results(state.database(), results).await?;
 
     let notification_targets = database::fetch_notification_targets(state.database()).await?;
 
-    notify::send_notifications(&processed.now_failing, notification_targets, state).await?;
+    notify::send_notifications(&processed, notification_targets, state).await?;
 
     database::update_test_status(state.database(), processed).await?;
 
     database::delete_expired_records(state.database(), state.settings.clone()).await?;
 
-    Ok(RunResults::new(passed, failed, skipped))
+    Ok(run_results)
 }

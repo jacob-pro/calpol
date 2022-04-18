@@ -478,7 +478,6 @@ dependencies = [
  "chrono",
  "clap",
  "config",
- "derive-new",
  "diesel",
  "diesel-postgres",
  "diesel-repository",
