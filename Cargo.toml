@@ -14,7 +14,7 @@ authors = ["Jacob Halsey <jacob@jhalsey.com>"]
 description = "Multi-Service health monitor"
 
 [dependencies]
-actix-extensible-rate-limit = "0.1.0"
+actix-extensible-rate-limit = "0.2.1"
 actix-web = "4.0.1"
 actix-web-httpauth = "0.6.0"
 actix-web-validator = "3.0.0"

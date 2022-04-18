@@ -45,9 +45,9 @@ dependencies = [
 
 [[package]]
 name = "actix-extensible-rate-limit"
-version = "0.1.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9fa16786b9939be284faf45f1ec8db25cbfe84bbea9952c08ad7380f56d71438"
+checksum = "0ea990351e38b399d3d1a96eef5e8feba721974a4319f6c66186b05782f6a05b"
 dependencies = [
  "actix-web",
  "async-trait",

@@ -4,7 +4,9 @@ mod v1;
 
 use crate::api::error::CalpolApiError;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
-use actix_extensible_rate_limit::backend::{SimpleInput, SimpleInputFunctionBuilder, SimpleOutput};
+use actix_extensible_rate_limit::backend::{
+    SimpleInputFunctionBuilder, SimpleInputFuture, SimpleOutput,
+};
 use actix_extensible_rate_limit::RateLimiter;
 use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::http::StatusCode;
@@ -13,7 +15,7 @@ use actix_web::web::ServiceConfig;
 use actix_web::{web, HttpResponse};
 use http_api_problem::ApiError;
 use serde::Serialize;
-use std::future::Ready;
+use std::borrow::Cow;
 use std::time::Duration;
 
 pub fn configure(api: &mut ServiceConfig, rate_limit_store: &InMemoryBackend) {
@@ -71,12 +73,16 @@ fn handle_500<B>(res: ServiceResponse<B>) -> Result<ErrorHandlerResponse<B>, act
         if let Some(err) = res.response().error() {
             log::error!("Internal Server Error: {}", err);
             if cfg!(debug_assertions) {
-                return format!("{}", err);
+                return Cow::from(format!("{}", err));
             }
         } else {
-            log::error!("Unknown Internal Server Error");
+            log::error!("Unknown Error");
         }
-        "Internal Server Error".to_string()
+        Cow::from(
+            StatusCode::INTERNAL_SERVER_ERROR
+                .canonical_reason()
+                .unwrap(),
+        )
     })();
     Ok(ErrorHandlerResponse::Response(
         res.error_response(
@@ -91,11 +97,7 @@ fn handle_500<B>(res: ServiceResponse<B>) -> Result<ErrorHandlerResponse<B>, act
 /// Builds a rate limiter to protect authentication routes
 fn auth_rate_limiter(
     backend: &InMemoryBackend,
-) -> RateLimiter<
-    InMemoryBackend,
-    SimpleOutput,
-    impl Fn(&ServiceRequest) -> Ready<Result<SimpleInput, actix_web::Error>>,
-> {
+) -> RateLimiter<InMemoryBackend, SimpleOutput, impl Fn(&ServiceRequest) -> SimpleInputFuture> {
     let input = SimpleInputFunctionBuilder::new(Duration::from_secs(60), 5)
         .real_ip_key()
         .custom_key("auth")
