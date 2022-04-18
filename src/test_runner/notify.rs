@@ -35,12 +35,12 @@ async fn send_email_notifications(
     let results = join_all(emails.into_iter().map(|email| {
         let message = Message::builder()
             .to(email.clone())
-            .from(state.settings().mailer.send_from.clone())
-            .reply_to(state.settings().mailer.reply_to().clone())
+            .from(state.settings.mailer.send_from.clone())
+            .reply_to(state.settings.mailer.reply_to().clone())
             .subject("Calpol Test Failure")
             .body(message.clone())
             .unwrap();
-        async move { (state.mailer().send(message).await, email) }
+        async move { (state.mailer.send(message).await, email) }
     }))
     .await;
     for (result, mailbox) in results {
@@ -58,9 +58,9 @@ async fn send_sms_notifications(
     phone_numbers: Vec<String>,
     message: String,
 ) -> anyhow::Result<()> {
-    if let Some(messagebird) = state.message_bird() {
+    if let Some(message_bird) = &state.message_bird {
         let count = phone_numbers.len();
-        let result = messagebird
+        let result = message_bird
             .send_message(&message, phone_numbers)
             .await
             .context("Failed sending SMS messages")?;

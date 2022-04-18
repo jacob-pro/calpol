@@ -1,6 +1,6 @@
 use crate::api::auth::{self, authenticator, Auth};
 use crate::api::error::CalpolApiError;
-use crate::api::{api_resource, auth_rate_limiter, response_mapper};
+use crate::api::{api_resource, auth_rate_limiter, JsonResponse};
 use crate::database::{
     NewSession, SessionRepository, SessionRepositoryImpl, UserRepository, UserRepositoryImpl,
 };
@@ -8,12 +8,11 @@ use crate::state::AppState;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path, ServiceConfig};
-use actix_web::{web, HttpRequest, Responder};
+use actix_web::{web, HttpRequest, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use calpol_model::api_v1::{LoginRequest, LoginResponse, SessionSummary};
 use chrono::Utc;
 use diesel_repository::CrudRepository;
-use futures::FutureExt;
 use http_api_problem::ApiError;
 use std::net::IpAddr;
 
@@ -45,7 +44,7 @@ async fn login(
     json: actix_web_validator::Json<LoginRequest>,
     state: Data<AppState>,
     req: HttpRequest,
-) -> impl Responder {
+) -> Result<HttpResponse, CalpolApiError> {
     let ip_addr = req
         .connection_info()
         .realip_remote_addr()
@@ -88,7 +87,7 @@ async fn login(
             }
             None => session_repository.insert(NewSession {
                 user_id: user.id,
-                token: auth::generate_token(&user),
+                token: auth::generate_token(),
                 last_ip: ip_bin,
                 user_agent,
             })?,
@@ -99,22 +98,22 @@ async fn login(
             session: session.into(),
         })
     })
-    .map(response_mapper)
-    .await
+    .await?
+    .map(JsonResponse::json_response)
 }
 
-async fn logout(auth: Auth, state: Data<AppState>) -> impl Responder {
+async fn logout(auth: Auth, state: Data<AppState>) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let session_repository = SessionRepositoryImpl::new(&database);
         session_repository.delete(auth.session)?;
         Ok(())
     })
-    .map(response_mapper)
-    .await
+    .await?
+    .map(JsonResponse::json_response)
 }
 
-async fn list(auth: Auth, state: Data<AppState>) -> impl Responder {
+async fn list(auth: Auth, state: Data<AppState>) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let session_repository = SessionRepositoryImpl::new(&database);
@@ -125,11 +124,15 @@ async fn list(auth: Auth, state: Data<AppState>) -> impl Responder {
             .collect();
         Ok(sessions)
     })
-    .map(response_mapper)
-    .await
+    .await?
+    .map(JsonResponse::json_response)
 }
 
-async fn delete(auth: Auth, session_id: Path<i32>, state: Data<AppState>) -> impl Responder {
+async fn delete(
+    auth: Auth,
+    session_id: Path<i32>,
+    state: Data<AppState>,
+) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let session_repository = SessionRepositoryImpl::new(&database);
@@ -138,6 +141,6 @@ async fn delete(auth: Auth, session_id: Path<i32>, state: Data<AppState>) -> imp
         }
         Ok(())
     })
-    .map(response_mapper)
-    .await
+    .await?
+    .map(JsonResponse::json_response)
 }

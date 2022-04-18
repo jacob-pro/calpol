@@ -1,11 +1,10 @@
 use crate::api::error::CalpolApiError;
-use crate::api::{api_resource, response_mapper};
+use crate::api::{api_resource, JsonResponse};
 use crate::database::{RunnerLogRepository, RunnerLogRepositoryImpl};
 use crate::state::AppState;
 use actix_web::web::{Data, ServiceConfig};
-use actix_web::{web, Responder};
+use actix_web::{web, HttpResponse};
 use calpol_model::api_v1::{ListRunnerLogsRequest, ListRunnerLogsResponse};
-use futures::FutureExt;
 
 pub fn configure(tests: &mut ServiceConfig) {
     tests.service(api_resource("").route(web::get().to(list)));
@@ -14,7 +13,7 @@ pub fn configure(tests: &mut ServiceConfig) {
 async fn list(
     state: Data<AppState>,
     json: actix_web_validator::Json<ListRunnerLogsRequest>,
-) -> impl Responder {
+) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let log_repository = RunnerLogRepositoryImpl::new(&database);
@@ -25,6 +24,6 @@ async fn list(
         };
         Ok(response)
     })
-    .map(response_mapper)
-    .await
+    .await?
+    .map(JsonResponse::json_response)
 }

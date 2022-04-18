@@ -1,23 +1,22 @@
 use crate::api::auth::Auth;
-use crate::api::error::{get_mailbox_for_user, CalpolApiError, MapDieselUniqueViolation};
+use crate::api::error::{CalpolApiError, MapDieselUniqueViolation, UnexpectedError};
 use crate::api::v1::password_reset::send_reset_email;
-use crate::api::{api_resource, auth, response_mapper};
+use crate::api::{api_resource, auth, JsonResponse};
 use crate::database::{
     NewUser, SessionRepository, SessionRepositoryImpl, User, UserRepository, UserRepositoryImpl,
 };
 use crate::state::AppState;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path, ServiceConfig};
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{web, HttpResponse};
 use calpol_model::api_v1::{
     CreateUserRequest, ListUsersRequest, ListUsersResponse, UpdateUserRequest, UserSummary,
 };
 use chrono::Utc;
 use diesel::Connection;
 use diesel_repository::CrudRepository;
-use futures::FutureExt;
 use http_api_problem::ApiError;
-use lettre::{Message, Transport};
+use lettre::{AsyncTransport, Message};
 
 pub fn configure(users: &mut ServiceConfig) {
     users.service(
@@ -39,7 +38,7 @@ async fn list(
     _auth: Auth,
     query: actix_web_validator::Query<ListUsersRequest>,
     state: Data<AppState>,
-) -> impl Responder {
+) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let user_repository = UserRepositoryImpl::new(&database);
@@ -55,26 +54,27 @@ async fn list(
             total: result.count,
         })
     })
-    .map(response_mapper)
-    .await
+    .await?
+    .map(JsonResponse::json_response)
 }
 
 pub async fn create(
     _auth: Auth,
     json: actix_web_validator::Json<CreateUserRequest>,
     state: Data<AppState>,
-) -> impl Responder {
-    web::block(move || -> Result<_, CalpolApiError> {
-        let database = state.database();
-        let mailer = state.mailer_old();
+) -> Result<HttpResponse, CalpolApiError> {
+    let database = state.database();
+    let user = web::block(move || -> Result<_, CalpolApiError> {
         let user_repository = UserRepositoryImpl::new(&database);
-        let mut user = user_repository
+        let user = user_repository
             .insert(NewUser {
                 name: json.name.clone(),
                 email: json.email.to_string().to_ascii_lowercase(),
                 password_hash: None,
                 sms_notifications: false,
                 email_notifications: false,
+                password_reset_token: Some(auth::generate_token()),
+                password_reset_token_creation: Some(Utc::now()),
             })
             .map_unique_violation(|_| {
                 ApiError::builder(StatusCode::CONFLICT)
@@ -83,19 +83,13 @@ pub async fn create(
                     .finish()
                     .into()
             })?;
-        if let Err(e) = (|| -> Result<(), CalpolApiError> {
-            user.password_reset_token = Some(auth::generate_token(&user));
-            user.password_reset_token_creation = Some(Utc::now());
-            user_repository.update(&user)?;
-            send_reset_email(&mailer, &user, state.settings())?;
-            Ok(())
-        })() {
-            log::error!("Unable to send reset email on account creation: {}", e)
-        }
-        Ok(UserSummary::from(user))
+        Ok(user)
     })
-    .map(response_mapper)
-    .await
+    .await??;
+    if let Err(e) = send_reset_email(&state.mailer, &user, &state.settings).await {
+        log::error!("Unable to send reset email on account creation: {}", e)
+    }
+    Ok(UserSummary::from(user).json_response())
 }
 
 fn retrieve_user<'u, U>(user_repository: &U, user_id: i32) -> Result<User, CalpolApiError>
@@ -110,15 +104,19 @@ where
     })
 }
 
-async fn get(_auth: Auth, user_id: Path<i32>, state: Data<AppState>) -> impl Responder {
+async fn get(
+    _auth: Auth,
+    user_id: Path<i32>,
+    state: Data<AppState>,
+) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let user_repository = UserRepositoryImpl::new(&database);
         let user = retrieve_user(&user_repository, *user_id)?;
         Ok(UserSummary::from(user))
     })
-    .map(response_mapper)
-    .await
+    .await?
+    .map(JsonResponse::json_response)
 }
 
 async fn update(
@@ -126,7 +124,7 @@ async fn update(
     user_id: Path<i32>,
     json: actix_web_validator::Json<UpdateUserRequest>,
     state: Data<AppState>,
-) -> impl Responder {
+) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let user_repository = UserRepositoryImpl::new(&database);
@@ -155,11 +153,15 @@ async fn update(
         })?;
         Ok(UserSummary::from(user))
     })
-    .map(response_mapper)
-    .await
+    .await?
+    .map(JsonResponse::json_response)
 }
 
-async fn delete(_auth: Auth, user_id: Path<i32>, state: Data<AppState>) -> impl Responder {
+async fn delete(
+    _auth: Auth,
+    user_id: Path<i32>,
+    state: Data<AppState>,
+) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let user_repository = UserRepositoryImpl::new(&database);
@@ -171,27 +173,32 @@ async fn delete(_auth: Auth, user_id: Path<i32>, state: Data<AppState>) -> impl 
             Ok(())
         })
     })
-    .map(response_mapper)
-    .await
+    .await?
+    .map(JsonResponse::json_response)
 }
 
-async fn test_email(_auth: Auth, user_id: Path<i32>, state: Data<AppState>) -> impl Responder {
-    web::block(move || -> Result<_, CalpolApiError> {
-        let database = state.database();
+async fn test_email(
+    _auth: Auth,
+    user_id: Path<i32>,
+    state: Data<AppState>,
+) -> Result<HttpResponse, CalpolApiError> {
+    let database = state.database();
+    let user = web::block(move || -> Result<_, CalpolApiError> {
         let user_repository = UserRepositoryImpl::new(&database);
-        let user = retrieve_user(&user_repository, *user_id)?;
-        let message = Message::builder()
-            .to(get_mailbox_for_user(&user)?)
-            .from(state.settings().mailer.send_from.clone())
-            .reply_to(state.settings().mailer.reply_to().clone())
-            .subject("Calpol Test Email")
-            .body("Calpol Test Email".to_string())
-            .unwrap();
-        state.mailer_old().send(&message)?;
-        Ok(())
+        retrieve_user(&user_repository, *user_id)
     })
-    .map(response_mapper)
-    .await
+    .await??;
+    let message = Message::builder()
+        .to(user
+            .get_mailbox()
+            .map_err(UnexpectedError::InvalidUserEmail)?)
+        .from(state.settings.mailer.send_from.clone())
+        .reply_to(state.settings.mailer.reply_to().clone())
+        .subject("Calpol Test Email")
+        .body("Calpol Test Email".to_string())
+        .unwrap();
+    state.mailer.send(message).await?;
+    Ok(().json_response())
 }
 
 async fn test_sms(
@@ -206,11 +213,11 @@ async fn test_sms(
     })
     .await??;
     if let Some(phone) = user.phone_number {
-        if let Some(messagebird) = state.message_bird() {
+        if let Some(message_bird) = &state.message_bird {
             let body = "Calpol Test SMS";
-            let res = messagebird.send_message(body, vec![phone.clone()]).await?;
+            let res = message_bird.send_message(body, vec![phone.clone()]).await?;
             log::info!("Sent test SMS to {}: {:?}", phone, res);
-            Ok(HttpResponse::Ok().json(()))
+            Ok(().json_response())
         } else {
             Err(ApiError::builder(StatusCode::BAD_REQUEST)
                 .message("SMS is not enabled on the server")

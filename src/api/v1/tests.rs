@@ -1,5 +1,5 @@
 use crate::api::error::{CalpolApiError, MapDieselUniqueViolation};
-use crate::api::{api_resource, response_mapper};
+use crate::api::{api_resource, JsonResponse};
 use crate::database::{
     NewTest, Test, TestRepository, TestRepositoryImpl, TestResultRepository,
     TestResultRepositoryImpl,
@@ -7,11 +7,10 @@ use crate::database::{
 use crate::state::AppState;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path, ServiceConfig};
-use actix_web::{web, Responder};
+use actix_web::{web, HttpResponse};
 use calpol_model::api_v1::{CreateTestRequest, TestSummary, UpdateTestRequest};
 use diesel::Connection;
 use diesel_repository::CrudRepository;
-use futures::FutureExt;
 use http_api_problem::ApiError;
 use std::convert::TryFrom;
 
@@ -29,7 +28,7 @@ pub fn configure(tests: &mut ServiceConfig) {
     );
 }
 
-async fn list(state: Data<AppState>) -> impl Responder {
+async fn list(state: Data<AppState>) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || {
         let database = state.database();
         let test_repository = TestRepositoryImpl::new(&database);
@@ -40,14 +39,14 @@ async fn list(state: Data<AppState>) -> impl Responder {
             .collect();
         tests
     })
-    .map(response_mapper)
-    .await
+    .await?
+    .map(JsonResponse::json_response)
 }
 
 async fn create(
     state: Data<AppState>,
     json: actix_web_validator::Json<CreateTestRequest>,
-) -> impl Responder {
+) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || {
         let database = state.database();
         let test_repository = TestRepositoryImpl::new(&database);
@@ -67,8 +66,8 @@ async fn create(
             })?;
         TestSummary::try_from(test)
     })
-    .map(response_mapper)
-    .await
+    .await?
+    .map(JsonResponse::json_response)
 }
 
 pub fn retrieve_test<'t, T>(test_repository: &T, test_name: &str) -> Result<Test, CalpolApiError>
@@ -83,22 +82,25 @@ where
     })
 }
 
-async fn get(state: Data<AppState>, test_name: Path<String>) -> impl Responder {
+async fn get(
+    state: Data<AppState>,
+    test_name: Path<String>,
+) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || {
         let database = state.database();
         let test_repository = TestRepositoryImpl::new(&database);
         let test = retrieve_test(&test_repository, test_name.as_ref())?;
         TestSummary::try_from(test)
     })
-    .map(response_mapper)
-    .await
+    .await?
+    .map(JsonResponse::json_response)
 }
 
 async fn update(
     test_name: Path<String>,
     json: actix_web_validator::Json<UpdateTestRequest>,
     state: Data<AppState>,
-) -> impl Responder {
+) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || {
         let database = state.database();
         let body = json.into_inner();
@@ -116,11 +118,14 @@ async fn update(
         test_repository.update(&test)?;
         TestSummary::try_from(test)
     })
-    .map(response_mapper)
-    .await
+    .await?
+    .map(JsonResponse::json_response)
 }
 
-async fn delete(test_name: Path<String>, state: Data<AppState>) -> impl Responder {
+async fn delete(
+    test_name: Path<String>,
+    state: Data<AppState>,
+) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let test_repository = TestRepositoryImpl::new(&database);
@@ -132,6 +137,6 @@ async fn delete(test_name: Path<String>, state: Data<AppState>) -> impl Responde
             Ok(())
         })
     })
-    .map(response_mapper)
-    .await
+    .await?
+    .map(JsonResponse::json_response)
 }

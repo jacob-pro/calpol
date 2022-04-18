@@ -1,4 +1,4 @@
-use crate::api::error::{internal_server_error, CalpolApiError};
+use crate::api::error::{CalpolApiError, UnexpectedError};
 use crate::database::{Session, SessionRepository, SessionRepositoryImpl, User};
 use crate::state::AppState;
 use actix_web::dev::{Payload, ServiceRequest};
@@ -11,6 +11,8 @@ use chrono::Utc;
 use diesel_repository::CrudRepository;
 use futures::future::{err, ok, Ready};
 use http_api_problem::ApiError;
+use rand::distributions::Standard;
+use rand::Rng;
 use std::net::IpAddr;
 
 pub struct Auth {
@@ -34,11 +36,14 @@ pub fn get_user_agent(map: &HeaderMap) -> Result<String, ApiError> {
         })
 }
 
-pub fn generate_token(user: &User) -> String {
+pub fn generate_token() -> String {
     const TOKEN_LENGTH_BYTES: usize = 32;
-    let mut buf = [0u8; TOKEN_LENGTH_BYTES];
-    getrandom::getrandom(&mut buf).expect("Failed to getrandom");
-    format!("{}_{}", user.id, base64::encode(&buf))
+    let rng = rand::thread_rng();
+    let v: Vec<u8> = rng
+        .sample_iter(&Standard)
+        .take(TOKEN_LENGTH_BYTES)
+        .collect();
+    base64::encode(&v)
 }
 
 pub async fn authenticator(
@@ -93,7 +98,7 @@ impl FromRequest for Auth {
         if let Some(user) = req.extensions_mut().remove::<Auth>() {
             ok(user)
         } else {
-            err(internal_server_error("Auth", "Missing Auth Data"))
+            err(UnexpectedError::MissingAuthData.into())
         }
     }
 }

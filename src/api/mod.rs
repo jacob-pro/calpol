@@ -6,9 +6,9 @@ use crate::api::error::CalpolApiError;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
 use actix_extensible_rate_limit::backend::{SimpleInput, SimpleInputFunctionBuilder, SimpleOutput};
 use actix_extensible_rate_limit::RateLimiter;
-use actix_web::dev::ServiceRequest;
-use actix_web::error::BlockingError;
+use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::http::StatusCode;
+use actix_web::middleware::{ErrorHandlerResponse, ErrorHandlers};
 use actix_web::web::ServiceConfig;
 use actix_web::{web, HttpResponse};
 use http_api_problem::ApiError;
@@ -29,19 +29,21 @@ pub fn configure(api: &mut ServiceConfig, rate_limit_store: &InMemoryBackend) {
             .error_handler(|e, _| CalpolApiError::from(e).into()),
     );
     api.service(api_scope("v1").configure(|v1| v1::configure(v1, rate_limit_store)));
-    api.service(api_resource("").route(web::get().to(index)));
+    api.service(api_resource("").route(web::get().to(|| async { "Calpol API".to_string() })));
 }
 
-pub fn response_mapper<T, E>(
-    response: Result<Result<T, E>, BlockingError>,
-) -> Result<HttpResponse, CalpolApiError>
-where
-    T: Serialize,
-    E: Into<CalpolApiError>,
-{
-    response?
-        .map(|value| HttpResponse::Ok().json(value))
-        .map_err(|e| e.into())
+pub fn error_handlers<B: 'static>() -> ErrorHandlers<B> {
+    ErrorHandlers::new().handler(StatusCode::INTERNAL_SERVER_ERROR, handle_500)
+}
+
+pub trait JsonResponse {
+    fn json_response(self) -> HttpResponse;
+}
+
+impl<T: Serialize> JsonResponse for T {
+    fn json_response(self) -> HttpResponse {
+        HttpResponse::Ok().json(self)
+    }
 }
 
 fn api_scope(path: &str) -> actix_web::Scope {
@@ -60,7 +62,33 @@ fn api_resource(path: &str) -> actix_web::Resource {
     }))
 }
 
-/// A rate limiter to protect authentication routes
+/// Handle Internal Server Errors:
+/// - Hide the error message (unless in a debug build).
+/// - Log the error.
+/// - Return in RFC7807 format.
+fn handle_500<B>(res: ServiceResponse<B>) -> Result<ErrorHandlerResponse<B>, actix_web::Error> {
+    let message = (|| {
+        if let Some(err) = res.response().error() {
+            log::error!("Internal Server Error: {}", err);
+            if cfg!(debug_assertions) {
+                return format!("{}", err);
+            }
+        } else {
+            log::error!("Unknown Internal Server Error");
+        }
+        "Internal Server Error".to_string()
+    })();
+    Ok(ErrorHandlerResponse::Response(
+        res.error_response(
+            ApiError::builder(StatusCode::INTERNAL_SERVER_ERROR)
+                .message(message)
+                .finish(),
+        )
+        .map_into_right_body(),
+    ))
+}
+
+/// Builds a rate limiter to protect authentication routes
 fn auth_rate_limiter(
     backend: &InMemoryBackend,
 ) -> RateLimiter<
@@ -75,8 +103,4 @@ fn auth_rate_limiter(
     RateLimiter::builder(backend.clone(), input)
         .add_headers()
         .build()
-}
-
-async fn index() -> String {
-    "Calpol API".to_string()
 }

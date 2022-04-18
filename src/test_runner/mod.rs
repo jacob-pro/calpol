@@ -19,16 +19,11 @@ pub async fn start(state: AppState) -> anyhow::Result<()> {
         log::info!("Beginning test run");
         let start_instant = Instant::now();
         let start_time = Utc::now();
-        let max_run_time = start_instant + state.settings().runner.timeout_duration();
+        let max_run_time = start_instant + state.settings.runner.timeout_duration();
         let result = run_tests(&state, max_run_time).await;
-        database::write_runner_log(
-            state.database(),
-            Arc::clone(state.settings()),
-            result,
-            start_time,
-        )
-        .await;
-        let next_run = start_instant + state.settings().runner.interval_duration();
+        database::write_runner_log(state.database(), state.settings.clone(), result, start_time)
+            .await;
+        let next_run = start_instant + state.settings.runner.interval_duration();
         sleep_until(next_run.into()).await;
     }
 }
@@ -80,14 +75,14 @@ async fn run_tests(state: &AppState, timeout: Instant) -> anyhow::Result<RunResu
         };
         (test, run_result)
     })
-    .buffer_unordered(state.settings().runner.concurrency as usize)
+    .buffer_unordered(state.settings.runner.concurrency as usize)
     .collect::<Vec<(Test, RunResult)>>()
     .await;
     let passed = results.iter().filter(|(_, r)| r.result.is_ok()).count();
     let failed = results.iter().filter(|(_, r)| r.result.is_err()).count();
 
     let now_failing =
-        database::process_test_results(state.database(), Arc::clone(state.settings()), results)
+        database::process_test_results(state.database(), Arc::clone(&state.settings), results)
             .await?;
     let notification_targets = database::fetch_notification_targets(state.database()).await?;
 

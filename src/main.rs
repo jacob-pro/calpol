@@ -6,7 +6,6 @@ extern crate diesel;
 
 mod api;
 mod database;
-mod mailer;
 mod schema;
 mod settings;
 mod state;
@@ -75,7 +74,11 @@ async fn main() -> anyhow::Result<()> {
             let server = HttpServer::new(move || {
                 App::new()
                     .app_data(Data::new(state.clone()))
-                    .service(scope("api").configure(|cfg| api::configure(cfg, &rl_backend)))
+                    .service(
+                        scope("api")
+                            .configure(|cfg| api::configure(cfg, &rl_backend))
+                            .wrap(api::error_handlers()),
+                    )
                     .wrap(middleware::Logger::default())
             })
             .bind(&settings.api_socket)?
@@ -101,6 +104,8 @@ fn create_user(connection: Connection, user: CreateUser) -> anyhow::Result<()> {
             password_hash: Some(bcrypt::hash(user.password, bcrypt::DEFAULT_COST)?),
             sms_notifications: false,
             email_notifications: false,
+            password_reset_token: None,
+            password_reset_token_creation: None,
         })
         .map_err(|e| e.into())
         .map(|u| {

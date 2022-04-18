@@ -1,21 +1,20 @@
 use crate::api::error::CalpolApiError;
 use crate::api::v1::converters;
 use crate::api::v1::tests::retrieve_test;
-use crate::api::{api_resource, response_mapper};
+use crate::api::{api_resource, JsonResponse};
 use crate::database::{TestRepositoryImpl, TestResultRepository, TestResultRepositoryImpl};
 use crate::state::AppState;
 use actix_web::web::{Data, Path, ServiceConfig};
-use actix_web::{web, Responder};
+use actix_web::{web, HttpResponse};
 use calpol_model::api_v1::GetTestResultsRequest;
 use diesel_repository::CrudRepository;
-use futures::FutureExt;
 
 pub fn configure(tests: &mut ServiceConfig) {
     tests.service(api_resource("").route(web::get().to(list)));
     tests.service(api_resource("{test_name}").route(web::get().to(get)));
 }
 
-async fn list(state: Data<AppState>) -> impl Responder {
+async fn list(state: Data<AppState>) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let test_repository = TestRepositoryImpl::new(&database);
@@ -35,15 +34,15 @@ async fn list(state: Data<AppState>) -> impl Responder {
             .collect::<Vec<_>>();
         Ok(summaries)
     })
-    .map(response_mapper)
-    .await
+    .await?
+    .map(JsonResponse::json_response)
 }
 
 async fn get(
     state: Data<AppState>,
     test_name: Path<String>,
     json: actix_web_validator::Json<GetTestResultsRequest>,
-) -> impl Responder {
+) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let test_repository = TestRepositoryImpl::new(&database);
@@ -56,6 +55,6 @@ async fn get(
             .collect::<Vec<_>>();
         Ok(results)
     })
-    .map(response_mapper)
-    .await
+    .await?
+    .map(JsonResponse::json_response)
 }

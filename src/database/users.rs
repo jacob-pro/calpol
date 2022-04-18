@@ -37,6 +37,8 @@ pub struct NewUser {
     pub password_hash: Option<String>,
     pub sms_notifications: bool,
     pub email_notifications: bool,
+    pub password_reset_token: Option<String>,
+    pub password_reset_token_creation: Option<DateTime<Utc>>,
 }
 
 implement_crud_repository!(UserRepositoryImpl, User, i32, Connection);

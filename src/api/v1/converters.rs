@@ -1,4 +1,4 @@
-use crate::api::error::{internal_server_error, CalpolApiError};
+use crate::api::error::{CalpolApiError, UnexpectedError};
 use crate::database;
 use crate::database::RunnerLog;
 use calpol_model::api_v1::*;
@@ -37,8 +37,8 @@ impl TryFrom<database::Test> for TestSummary {
     type Error = CalpolApiError;
 
     fn try_from(test: database::Test) -> Result<Self, Self::Error> {
-        let config = serde_json::from_value(test.config)
-            .map_err(|e| internal_server_error("TryFromTest", e))?;
+        let config =
+            serde_json::from_value(test.config).map_err(UnexpectedError::TestDeserialization)?;
         Ok(Self {
             name: test.name,
             config,

@@ -1,6 +1,6 @@
 use actix_web::error::{BlockingError, PathError};
 use actix_web::http::StatusCode;
-use actix_web::ResponseError;
+use actix_web::{HttpResponse, ResponseError};
 use bcrypt::BcryptError;
 use http_api_problem::ApiError;
 use lettre::transport::smtp;
@@ -9,43 +9,44 @@ use thiserror::Error;
 use validator::ValidationErrors;
 
 #[derive(Debug, Error)]
-#[error("{0}")]
-pub struct CalpolApiError(
-    #[source]
-    #[from]
-    ApiError,
-);
+pub enum CalpolApiError {
+    #[error("{0}")]
+    ApiError(
+        #[source]
+        #[from]
+        ApiError,
+    ),
+    #[error("{0}: {1}")]
+    InternalServerError(&'static str, #[source] Box<dyn std::error::Error + Send>),
+}
 
 impl ResponseError for CalpolApiError {
+    fn status_code(&self) -> StatusCode {
+        match &self {
+            CalpolApiError::ApiError(e) => e.status(),
+            CalpolApiError::InternalServerError(_, _) => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+
     fn error_response(&self) -> actix_web::HttpResponse {
-        self.0.error_response()
+        match &self {
+            CalpolApiError::ApiError(a) => a.error_response(),
+            CalpolApiError::InternalServerError(_, _) => {
+                HttpResponse::InternalServerError().finish()
+            }
+        }
     }
 }
 
-pub fn internal_server_error<E: std::fmt::Display>(prefix: &str, error: E) -> CalpolApiError {
-    let builder = ApiError::builder(StatusCode::INTERNAL_SERVER_ERROR);
-    CalpolApiError(if cfg!(debug_assertions) {
-        builder.message(format!("{}: {}", prefix, error)).finish()
-    } else {
-        builder.finish()
-    })
-}
+// 4xx Errors
 
-impl From<diesel::result::Error> for CalpolApiError {
-    fn from(e: diesel::result::Error) -> Self {
-        internal_server_error("DieselError", e)
-    }
-}
-
-impl From<BlockingError> for CalpolApiError {
-    fn from(e: BlockingError) -> Self {
-        internal_server_error("ActixBlockingError", e)
-    }
-}
-
-impl From<BcryptError> for CalpolApiError {
-    fn from(e: BcryptError) -> Self {
-        internal_server_error("BcryptError", e)
+impl From<ValidationErrors> for CalpolApiError {
+    fn from(e: ValidationErrors) -> Self {
+        ApiError::builder(StatusCode::BAD_REQUEST)
+            .message("One or more fields failed validation")
+            .field("invalid-params", e.into_errors())
+            .finish()
+            .into()
     }
 }
 
@@ -61,38 +62,68 @@ impl From<actix_web_validator::Error> for CalpolApiError {
     }
 }
 
-impl From<smtp::Error> for CalpolApiError {
-    fn from(e: smtp::Error) -> Self {
-        internal_server_error("SmtpError", e)
-    }
-}
-
-impl From<ValidationErrors> for CalpolApiError {
-    fn from(e: ValidationErrors) -> Self {
-        CalpolApiError(
-            ApiError::builder(StatusCode::BAD_REQUEST)
-                .message("One or more fields failed validation")
-                .field("invalid-params", e.into_errors())
-                .finish(),
-        )
-    }
-}
-
 impl From<PathError> for CalpolApiError {
     fn from(e: PathError) -> Self {
-        CalpolApiError(
-            ApiError::builder(StatusCode::NOT_FOUND)
-                .message(format!("Unable to parse path parameter: {:#}", e))
-                .finish(),
-        )
+        ApiError::builder(StatusCode::NOT_FOUND)
+            .message(format!("Unable to parse path parameter: {:#}", e))
+            .finish()
+            .into()
+    }
+}
+
+// 5xx Errors
+
+/// Various unexpected errors that could occur in the Calpol API.
+/// These indicate some sort of programming error.
+#[derive(Debug, Error)]
+pub enum UnexpectedError {
+    #[error("Unable to deserialize test json from database: {0}")]
+    TestDeserialization(#[source] serde_json::Error),
+    #[error("Missing auth data")]
+    MissingAuthData,
+    #[error("User has invalid email: {0}")]
+    InvalidUserEmail(#[source] lettre::address::AddressError),
+    #[error("Password reset token missing")]
+    PasswordResetTokenMissing,
+}
+
+impl From<UnexpectedError> for CalpolApiError {
+    fn from(e: UnexpectedError) -> Self {
+        CalpolApiError::InternalServerError("Calpol", Box::new(e))
+    }
+}
+
+impl From<diesel::result::Error> for CalpolApiError {
+    fn from(e: diesel::result::Error) -> Self {
+        CalpolApiError::InternalServerError("Diesel", Box::new(e))
+    }
+}
+
+impl From<BlockingError> for CalpolApiError {
+    fn from(e: BlockingError) -> Self {
+        CalpolApiError::InternalServerError("BlockingError", Box::new(e))
+    }
+}
+
+impl From<BcryptError> for CalpolApiError {
+    fn from(e: BcryptError) -> Self {
+        CalpolApiError::InternalServerError("BcryptError", Box::new(e))
+    }
+}
+
+impl From<smtp::Error> for CalpolApiError {
+    fn from(e: smtp::Error) -> Self {
+        CalpolApiError::InternalServerError("smtp::Error", Box::new(e))
     }
 }
 
 impl From<messagebird::Error> for CalpolApiError {
     fn from(e: messagebird::Error) -> Self {
-        internal_server_error("MessageBirdError", e)
+        CalpolApiError::InternalServerError("messagebird::Error", Box::new(e))
     }
 }
+
+// Extensions
 
 pub trait MapDieselUniqueViolation<T, F> {
     fn map_unique_violation(self, f: F) -> Result<T, CalpolApiError>;
@@ -114,12 +145,4 @@ where
             CalpolApiError::from(e)
         })
     }
-}
-
-pub fn get_mailbox_for_user(
-    user: &crate::database::User,
-) -> Result<lettre::message::Mailbox, CalpolApiError> {
-    // This is an internal error because users with bad emails should never be created
-    user.get_mailbox()
-        .map_err(|e| internal_server_error("UserHasInvalidEmail", e))
 }

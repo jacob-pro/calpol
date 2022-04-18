@@ -34,13 +34,13 @@ diesel-repository = { git = "https://github.com/jacob-pro/diesel-repository.git"
 diesel_migrations = "1.4.0"
 env_logger = "0.8.4"
 futures = "0.3.21"
-getrandom = "0.2.3"
 http = "0.2.6"
 http-api-problem = { features = ["actix-web", "api-error"], git = "https://github.com/jacob-pro/http-api-problem" }
 lettre = { version = "0.10.0-rc.5", features = ["pool", "serde", "tokio1", "tokio1-native-tls"] }
 log = "0.4.14"
 messagebird = { path = "./messagebird" }
 native-tls = "0.2.8"
+rand = "0.8.5"
 reqwest = "0.11.8"
 serde = "1.0"
 serde_json = "1.0"
