@@ -23,7 +23,6 @@ use diesel::r2d2::ConnectionManager;
 use diesel::{r2d2, PgConnection};
 use diesel_repository::CrudRepository;
 use env_logger::Env;
-use futures::FutureExt;
 use state::AppState;
 use std::sync::Arc;
 
@@ -68,9 +67,10 @@ async fn main() -> anyhow::Result<()> {
 
     match opts.subcommand {
         SubCommand::Server => {
-            let state = AppState::new(Arc::clone(&settings), pool)?;
+            let (tx, rx) = test_runner::make_channel();
+            let state = AppState::new(Arc::clone(&settings), pool, tx)?;
             let rl_backend = InMemoryBackend::builder().build();
-            let runner = test_runner::start(state.clone()).fuse();
+            let runner = test_runner::start(state.clone(), rx);
             let server = HttpServer::new(move || {
                 App::new()
                     .app_data(Data::new(state.clone()))
@@ -82,10 +82,8 @@ async fn main() -> anyhow::Result<()> {
                     .wrap(middleware::Logger::default())
             })
             .bind(&settings.api_socket)?
-            .run()
-            .fuse();
-            futures::pin_mut!(runner, server);
-            futures::select! {
+            .run();
+            tokio::select! {
                 result = runner => result.context("Test runner failed")?,
                 result = server => result.context("Http Server failed")?,
             };

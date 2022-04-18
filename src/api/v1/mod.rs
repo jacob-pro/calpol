@@ -7,9 +7,12 @@ mod tests;
 mod users;
 
 use crate::api::auth::authenticator;
-use crate::api::{api_scope, auth_rate_limiter};
+use crate::api::error::CalpolApiError;
+use crate::api::{api_resource, api_scope, auth_rate_limiter, JsonResponse};
+use crate::AppState;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
-use actix_web::web::ServiceConfig;
+use actix_web::web::{Data, ServiceConfig};
+use actix_web::{web, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
 
 pub fn configure(v1: &mut ServiceConfig, rate_limit_backend: &InMemoryBackend) {
@@ -38,6 +41,16 @@ pub fn configure(v1: &mut ServiceConfig, rate_limit_backend: &InMemoryBackend) {
     v1.service(
         api_scope("runner_logs")
             .configure(runner_logs::configure)
+            .wrap(auth.clone()),
+    );
+    v1.service(
+        api_resource("re_run")
+            .route(web::post().to(re_run))
             .wrap(auth),
     );
+}
+
+async fn re_run(state: Data<AppState>) -> Result<HttpResponse, CalpolApiError> {
+    state.queue_test_run();
+    Ok(().json_response())
 }

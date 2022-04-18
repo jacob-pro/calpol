@@ -12,9 +12,14 @@ use derive_new::new;
 use futures::{stream, StreamExt};
 use std::sync::Arc;
 use std::time::Instant;
+use tokio::sync::mpsc;
 use tokio::time::{sleep_until, timeout_at};
 
-pub async fn start(state: AppState) -> anyhow::Result<()> {
+pub fn make_channel() -> (mpsc::Sender<()>, mpsc::Receiver<()>) {
+    mpsc::channel(1)
+}
+
+pub async fn start(state: AppState, mut rx: mpsc::Receiver<()>) -> anyhow::Result<()> {
     loop {
         log::info!("Beginning test run");
         let start_instant = Instant::now();
@@ -24,7 +29,10 @@ pub async fn start(state: AppState) -> anyhow::Result<()> {
         database::write_runner_log(state.database(), state.settings.clone(), result, start_time)
             .await;
         let next_run = start_instant + state.settings.runner.interval_duration();
-        sleep_until(next_run.into()).await;
+        tokio::select! {
+            _ = sleep_until(next_run.into()) => {},
+            message = rx.recv() => {message.unwrap()}
+        }
     }
 }
 

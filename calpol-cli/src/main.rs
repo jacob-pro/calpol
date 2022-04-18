@@ -148,6 +148,8 @@ enum SubCommand {
     TestResults(subcommands::TestResults),
     /// Runner logs
     RunnerLogs(subcommands::RunnerLogs),
+    /// Queue the test runner to re-run immediately
+    ReRun(subcommands::ReRun),
 }
 
 fn main() {
@@ -178,6 +180,7 @@ impl Runnable for SubCommand {
             SubCommand::Tests(a) => a.run(opts),
             SubCommand::TestResults(a) => a.run(opts),
             SubCommand::RunnerLogs(a) => a.run(opts),
+            SubCommand::ReRun(a) => a.run(opts),
         }
     }
 }

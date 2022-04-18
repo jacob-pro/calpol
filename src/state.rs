@@ -6,6 +6,7 @@ use lettre::transport::smtp::PoolConfig;
 use lettre::{AsyncSmtpTransport, Tokio1Executor};
 use messagebird::MessageBirdClient;
 use std::sync::Arc;
+use tokio::sync::mpsc;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -13,23 +14,30 @@ pub struct AppState {
     pub mailer: AsyncSmtpTransport<Tokio1Executor>,
     pub message_bird: Option<MessageBirdClient>,
     pub settings: Arc<Settings>,
+    test_runner: mpsc::Sender<()>,
 }
 
 impl AppState {
     pub fn new(
         settings: Arc<Settings>,
         database: r2d2::Pool<ConnectionManager<PgConnection>>,
+        test_runner: mpsc::Sender<()>,
     ) -> anyhow::Result<Self> {
         Ok(Self {
             database,
             mailer: lettre_client(&settings.mailer)?,
             message_bird: message_bird_client(settings.message_bird.as_ref())?,
             settings,
+            test_runner,
         })
     }
 
     pub fn database(&self) -> crate::database::Connection {
         self.database.get().unwrap()
+    }
+
+    pub fn queue_test_run(&self) {
+        self.test_runner.try_send(()).ok();
     }
 }
 
