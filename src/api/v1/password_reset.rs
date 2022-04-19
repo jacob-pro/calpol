@@ -1,8 +1,9 @@
 use crate::api::error::{CalpolApiError, UnexpectedError};
-use crate::api::{api_resource, auth, JsonResponse};
+use crate::api::{api_resource, api_scope, auth, auth_rate_limiter, JsonResponse};
 use crate::database::{User, UserRepository, UserRepositoryImpl};
 use crate::settings::Settings;
 use crate::state::AppState;
+use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, ServiceConfig};
 use actix_web::{web, HttpResponse};
@@ -14,9 +15,13 @@ use lettre::Message;
 
 const TOKEN_EXPIRY_HOURS: i64 = 12;
 
-pub fn configure(password_reset: &mut ServiceConfig) {
-    password_reset.service(api_resource("request").route(web::post().to(request)));
-    password_reset.service(api_resource("submit").route(web::post().to(submit)));
+pub fn configure(v1: &mut ServiceConfig, rl_backend: &InMemoryBackend) {
+    v1.service(
+        api_scope("password_reset")
+            .service(api_resource("request").route(web::post().to(request)))
+            .service(api_resource("submit").route(web::post().to(submit)))
+            .wrap(auth_rate_limiter(rl_backend)),
+    );
 }
 
 pub async fn send_reset_email<M, E>(

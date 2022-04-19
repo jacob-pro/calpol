@@ -1,6 +1,6 @@
 use crate::api::auth::{self, authenticator, Auth};
 use crate::api::error::CalpolApiError;
-use crate::api::{api_resource, auth_rate_limiter, JsonResponse};
+use crate::api::{api_resource, api_scope, auth_rate_limiter, JsonResponse};
 use crate::database::{
     NewSession, SessionRepository, SessionRepositoryImpl, UserRepository, UserRepositoryImpl,
 };
@@ -16,27 +16,30 @@ use diesel_repository::CrudRepository;
 use http_api_problem::ApiError;
 use std::net::IpAddr;
 
-pub fn configure(sessions: &mut ServiceConfig, rate_limit_backend: &InMemoryBackend) {
+pub fn configure(v1: &mut ServiceConfig, rate_limit_backend: &InMemoryBackend) {
     let auth = HttpAuthentication::with_fn(authenticator);
-    sessions.service(
-        api_resource("login")
-            .route(web::post().to(login))
-            .wrap(auth_rate_limiter(rate_limit_backend)),
-    );
-    sessions.service(
-        api_resource("logout")
-            .route(web::delete().to(logout))
-            .wrap(auth.clone()),
-    );
-    sessions.service(
-        api_resource("")
-            .route(web::get().to(list))
-            .wrap(auth.clone()),
-    );
-    sessions.service(
-        api_resource("{session_id}")
-            .route(web::delete().to(delete))
-            .wrap(auth),
+    v1.service(
+        api_scope("sessions")
+            .service(
+                api_resource("login")
+                    .route(web::post().to(login))
+                    .wrap(auth_rate_limiter(rate_limit_backend)),
+            )
+            .service(
+                api_resource("logout")
+                    .route(web::delete().to(logout))
+                    .wrap(auth.clone()),
+            )
+            .service(
+                api_resource("")
+                    .route(web::get().to(list))
+                    .wrap(auth.clone()),
+            )
+            .service(
+                api_resource("{session_id}")
+                    .route(web::delete().to(delete))
+                    .wrap(auth),
+            ),
     );
 }
 

@@ -1,5 +1,6 @@
+use crate::api::auth::authenticator;
 use crate::api::error::{CalpolApiError, MapDieselUniqueViolation};
-use crate::api::{api_resource, JsonResponse};
+use crate::api::{api_resource, api_scope, JsonResponse};
 use crate::database::{
     NewTest, Test, TestRepository, TestRepositoryImpl, TestResultRepository,
     TestResultRepositoryImpl,
@@ -8,23 +9,29 @@ use crate::state::AppState;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path, ServiceConfig};
 use actix_web::{web, HttpResponse};
+use actix_web_httpauth::middleware::HttpAuthentication;
 use calpol_model::api_v1::{CreateTestRequest, TestSummary, UpdateTestRequest};
 use diesel::Connection;
 use diesel_repository::CrudRepository;
 use http_api_problem::ApiError;
 use std::convert::TryFrom;
 
-pub fn configure(tests: &mut ServiceConfig) {
-    tests.service(
-        api_resource("")
-            .route(web::get().to(list))
-            .route(web::post().to(create)),
-    );
-    tests.service(
-        api_resource("{test_name}")
-            .route(web::get().to(get))
-            .route(web::delete().to(delete))
-            .route(web::put().to(update)),
+pub fn configure(v1: &mut ServiceConfig) {
+    let auth = HttpAuthentication::with_fn(authenticator);
+    v1.service(
+        api_scope("tests")
+            .service(
+                api_resource("")
+                    .route(web::get().to(list))
+                    .route(web::post().to(create)),
+            )
+            .service(
+                api_resource("{test_name}")
+                    .route(web::get().to(get))
+                    .route(web::delete().to(delete))
+                    .route(web::put().to(update)),
+            )
+            .wrap(auth),
     );
 }
 

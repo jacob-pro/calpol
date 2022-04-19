@@ -18,24 +18,25 @@ use serde::Serialize;
 use std::borrow::Cow;
 use std::time::Duration;
 
-pub fn configure(api: &mut ServiceConfig, rate_limit_store: &InMemoryBackend) {
-    api.app_data(
-        actix_web::web::PathConfig::default().error_handler(|e, _| CalpolApiError::from(e).into()),
+pub fn configure(app: &mut ServiceConfig, rate_limit_store: &InMemoryBackend) {
+    app.service(
+        api_scope("api")
+            .app_data(
+                actix_web::web::PathConfig::default()
+                    .error_handler(|e, _| CalpolApiError::from(e).into()),
+            )
+            .app_data(
+                actix_web_validator::QueryConfig::default()
+                    .error_handler(|e, _| CalpolApiError::from(e).into()),
+            )
+            .app_data(
+                actix_web_validator::JsonConfig::default()
+                    .error_handler(|e, _| CalpolApiError::from(e).into()),
+            )
+            .configure(|api| v1::configure(api, rate_limit_store))
+            .service(api_resource("").route(web::get().to(|| async { "Calpol API".to_string() })))
+            .wrap(ErrorHandlers::new().handler(StatusCode::INTERNAL_SERVER_ERROR, handle_500)),
     );
-    api.app_data(
-        actix_web_validator::QueryConfig::default()
-            .error_handler(|e, _| CalpolApiError::from(e).into()),
-    );
-    api.app_data(
-        actix_web_validator::JsonConfig::default()
-            .error_handler(|e, _| CalpolApiError::from(e).into()),
-    );
-    api.service(api_scope("v1").configure(|v1| v1::configure(v1, rate_limit_store)));
-    api.service(api_resource("").route(web::get().to(|| async { "Calpol API".to_string() })));
-}
-
-pub fn error_handlers<B: 'static>() -> ErrorHandlers<B> {
-    ErrorHandlers::new().handler(StatusCode::INTERNAL_SERVER_ERROR, handle_500)
 }
 
 pub trait JsonResponse {

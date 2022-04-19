@@ -14,7 +14,7 @@ mod test_runner;
 use crate::database::{Connection, NewUser, UserRepositoryImpl};
 use crate::settings::Settings;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
-use actix_web::web::{scope, Data};
+use actix_web::web::Data;
 use actix_web::{middleware, App, HttpServer};
 use anyhow::Context;
 use calpol_model::api_v1::UserSummary;
@@ -74,11 +74,7 @@ async fn main() -> anyhow::Result<()> {
             let server = HttpServer::new(move || {
                 App::new()
                     .app_data(Data::new(state.clone()))
-                    .service(
-                        scope("api")
-                            .configure(|cfg| api::configure(cfg, &rl_backend))
-                            .wrap(api::error_handlers()),
-                    )
+                    .configure(|cfg| api::configure(cfg, &rl_backend))
                     .wrap(middleware::Logger::default())
             })
             .bind(&settings.api_socket)?

@@ -1,17 +1,24 @@
+use crate::api::auth::authenticator;
 use crate::api::error::CalpolApiError;
 use crate::api::v1::converters;
 use crate::api::v1::tests::retrieve_test;
-use crate::api::{api_resource, JsonResponse};
+use crate::api::{api_resource, api_scope, JsonResponse};
 use crate::database::{TestRepositoryImpl, TestResultRepository, TestResultRepositoryImpl};
 use crate::state::AppState;
 use actix_web::web::{Data, Path, ServiceConfig};
 use actix_web::{web, HttpResponse};
+use actix_web_httpauth::middleware::HttpAuthentication;
 use calpol_model::api_v1::GetTestResultsRequest;
 use diesel_repository::CrudRepository;
 
-pub fn configure(tests: &mut ServiceConfig) {
-    tests.service(api_resource("").route(web::get().to(list)));
-    tests.service(api_resource("{test_name}").route(web::get().to(get)));
+pub fn configure(v1: &mut ServiceConfig) {
+    let auth = HttpAuthentication::with_fn(authenticator);
+    v1.service(
+        api_scope("test_results")
+            .service(api_resource("").route(web::get().to(list)))
+            .service(api_resource("{test_name}").route(web::get().to(get)))
+            .wrap(auth),
+    );
 }
 
 async fn list(state: Data<AppState>) -> Result<HttpResponse, CalpolApiError> {

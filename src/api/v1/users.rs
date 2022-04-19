@@ -1,7 +1,7 @@
-use crate::api::auth::Auth;
+use crate::api::auth::{authenticator, Auth};
 use crate::api::error::{CalpolApiError, MapDieselUniqueViolation, UnexpectedError};
 use crate::api::v1::password_reset::send_reset_email;
-use crate::api::{api_resource, auth, JsonResponse};
+use crate::api::{api_resource, api_scope, auth, JsonResponse};
 use crate::database::{
     NewUser, SessionRepository, SessionRepositoryImpl, User, UserRepository, UserRepositoryImpl,
 };
@@ -9,6 +9,7 @@ use crate::state::AppState;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path, ServiceConfig};
 use actix_web::{web, HttpResponse};
+use actix_web_httpauth::middleware::HttpAuthentication;
 use calpol_model::api_v1::{
     CreateUserRequest, ListUsersRequest, ListUsersResponse, UpdateUserRequest, UserSummary,
 };
@@ -18,20 +19,25 @@ use diesel_repository::CrudRepository;
 use http_api_problem::ApiError;
 use lettre::{AsyncTransport, Message};
 
-pub fn configure(users: &mut ServiceConfig) {
-    users.service(
-        api_resource("")
-            .route(web::get().to(list))
-            .route(web::post().to(create)),
+pub fn configure(v1: &mut ServiceConfig) {
+    let auth = HttpAuthentication::with_fn(authenticator);
+    v1.service(
+        api_scope("users")
+            .service(
+                api_resource("")
+                    .route(web::get().to(list))
+                    .route(web::post().to(create)),
+            )
+            .service(
+                api_resource("{user_id}")
+                    .route(web::get().to(get))
+                    .route(web::put().to(update))
+                    .route(web::delete().to(delete)),
+            )
+            .service(api_resource("{user_id}/test_email").route(web::post().to(test_email)))
+            .service(api_resource("{user_id}/test_sms").route(web::post().to(test_sms)))
+            .wrap(auth),
     );
-    users.service(
-        api_resource("{user_id}")
-            .route(web::get().to(get))
-            .route(web::put().to(update))
-            .route(web::delete().to(delete)),
-    );
-    users.service(api_resource("{user_id}/test_email").route(web::post().to(test_email)));
-    users.service(api_resource("{user_id}/test_sms").route(web::post().to(test_sms)));
 }
 
 async fn list(

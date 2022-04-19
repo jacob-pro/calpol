@@ -8,45 +8,28 @@ mod users;
 
 use crate::api::auth::authenticator;
 use crate::api::error::CalpolApiError;
-use crate::api::{api_resource, api_scope, auth_rate_limiter, JsonResponse};
+use crate::api::{api_resource, api_scope, JsonResponse};
 use crate::AppState;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
 use actix_web::web::{Data, ServiceConfig};
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
 
-pub fn configure(v1: &mut ServiceConfig, rate_limit_backend: &InMemoryBackend) {
+pub fn configure(api: &mut ServiceConfig, rate_limit_backend: &InMemoryBackend) {
     let auth = HttpAuthentication::with_fn(authenticator);
-    v1.service(api_scope("sessions").configure(|c| sessions::configure(c, rate_limit_backend)));
-    v1.service(
-        api_scope("users")
+    api.service(
+        api_scope("v1")
+            .configure(|v1| sessions::configure(v1, rate_limit_backend))
             .configure(users::configure)
-            .wrap(auth.clone()),
-    );
-    v1.service(
-        api_scope("password_reset")
-            .configure(password_reset::configure)
-            .wrap(auth_rate_limiter(rate_limit_backend)),
-    );
-    v1.service(
-        api_scope("tests")
+            .configure(|v1| password_reset::configure(v1, rate_limit_backend))
             .configure(tests::configure)
-            .wrap(auth.clone()),
-    );
-    v1.service(
-        api_scope("test_results")
             .configure(test_results::configure)
-            .wrap(auth.clone()),
-    );
-    v1.service(
-        api_scope("runner_logs")
             .configure(runner_logs::configure)
-            .wrap(auth.clone()),
-    );
-    v1.service(
-        api_resource("re_run")
-            .route(web::post().to(re_run))
-            .wrap(auth),
+            .service(
+                api_resource("re_run")
+                    .route(web::post().to(re_run))
+                    .wrap(auth),
+            ),
     );
 }
 
