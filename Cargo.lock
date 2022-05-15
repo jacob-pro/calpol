@@ -1258,7 +1258,8 @@ dependencies = [
 [[package]]
 name = "http-api-problem"
 version = "0.52.0"
-source = "git+https://github.com/jacob-pro/http-api-problem#20a2cf9c2252a3fdb0b21ddf493b4c8d8b93391f"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "80b3fd06176f384d927dfeb3ab544454f14654e21c79f3a7209a4fba665d04a9"
 dependencies = [
  "actix",
  "actix-web",
