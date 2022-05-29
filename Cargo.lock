@@ -486,7 +486,7 @@ dependencies = [
  "futures",
  "http",
  "http-api-problem 0.52.0",
- "lettre",
+ "lettre 0.10.0-rc.6",
  "log",
  "messagebird",
  "rand 0.8.5",
@@ -526,7 +526,7 @@ dependencies = [
 name = "calpol-model"
 version = "0.1.0"
 dependencies = [
- "lettre",
+ "lettre 0.10.0-rc.5",
  "serde 1.0.136",
  "serde_json",
  "url",
@@ -891,6 +891,12 @@ checksum = "6690291166824e467790ac08ba42f241791567e8337bbf00c5a6e87889629f98"
 dependencies = [
  "base64 0.13.0",
 ]
+
+[[package]]
+name = "email_address"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8684b7c9cb4857dfa1e5b9629ef584ba618c9b93bae60f58cb23f4f271d0468e"
 
 [[package]]
 name = "encode_unicode"
@@ -1517,9 +1523,31 @@ version = "0.10.0-rc.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5144148f337be14dabfc0f0d85b691a68ac6c77ef22a5c47c5504b70a7c9fcf3"
 dependencies = [
+ "base64 0.13.0",
+ "email-encoding",
+ "fastrand",
+ "futures-util",
+ "hostname",
+ "httpdate 1.0.2",
+ "idna",
+ "mime",
+ "native-tls",
+ "nom 7.1.1",
+ "once_cell",
+ "quoted_printable",
+ "regex",
+ "serde 1.0.136",
+]
+
+[[package]]
+name = "lettre"
+version = "0.10.0-rc.6"
+source = "git+https://github.com/lettre/lettre?rev=1391a83#1391a834ce9616f66c8eeced108b19eeb64ca2fa"
+dependencies = [
  "async-trait",
  "base64 0.13.0",
  "email-encoding",
+ "email_address",
  "fastrand",
  "futures-io",
  "futures-util",
@@ -1533,6 +1561,7 @@ dependencies = [
  "quoted_printable",
  "regex",
  "serde 1.0.136",
+ "socket2 0.4.4",
  "tokio 1.17.0",
  "tokio-native-tls",
 ]

@@ -35,7 +35,7 @@ env_logger = "0.8.4"
 futures = "0.3.21"
 http = "0.2.6"
 http-api-problem = { features = ["actix-web", "api-error"], version = "0.52.0" }
-lettre = { version = "0.10.0-rc.5", features = ["pool", "serde", "tokio1", "tokio1-native-tls"] }
+lettre = { features = ["pool", "serde", "tokio1", "tokio1-native-tls"], git = "https://github.com/lettre/lettre", rev = "1391a83" }
 log = "0.4.14"
 messagebird = { path = "./messagebird" }
 rand = "0.8.5"

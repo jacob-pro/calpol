@@ -10,8 +10,7 @@ use trust_dns_resolver::AsyncResolver;
 const SMTP_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 const DNS_TIMEOUT: Duration = Duration::from_secs(5);
 
-pub async fn test_smtp(smtp: &Smtp, _domain: Domain, test_name: &str) -> anyhow::Result<()> {
-    // TODO: Use correct net domain: https://github.com/lettre/lettre/issues/715
+pub async fn test_smtp(smtp: &Smtp, domain: Domain, test_name: &str) -> anyhow::Result<()> {
     let host = get_host(smtp).await?;
     let port = get_port(smtp);
     log::info!("{}: Connecting to {}:{}", test_name, host, port);
@@ -26,6 +25,7 @@ pub async fn test_smtp(smtp: &Smtp, _domain: Domain, test_name: &str) -> anyhow:
         Some(SMTP_CONNECT_TIMEOUT),
         &client_id,
         tls_parameters,
+        Some(domain.local_address()),
     )
     .await
     .context("Failed to connect to the smtp server")?;

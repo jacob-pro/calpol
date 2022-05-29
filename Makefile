@@ -1,5 +1,4 @@
-.PHONY: test format
-
+.PHONY: test
 test:
 	cargo fmt -- --check
 	cargo-sort --check --workspace
@@ -8,6 +7,7 @@ test:
 	cargo test
 	cargo test --package calpol-cli
 
+.PHONY: format
 format:
 	cargo fmt
 	cargo-sort --workspace
