@@ -117,8 +117,8 @@ impl From<smtp::Error> for CalpolApiError {
     }
 }
 
-impl From<messagebird::Error> for CalpolApiError {
-    fn from(e: messagebird::Error) -> Self {
+impl From<crate::messagebird::Error> for CalpolApiError {
+    fn from(e: crate::messagebird::Error) -> Self {
         CalpolApiError::InternalServerError("messagebird::Error", Box::new(e))
     }
 }

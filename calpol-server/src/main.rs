@@ -6,6 +6,7 @@ extern crate diesel;
 
 mod api;
 mod database;
+mod messagebird;
 mod schema;
 mod settings;
 mod state;

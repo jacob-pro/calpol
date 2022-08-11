@@ -1,10 +1,10 @@
+use crate::messagebird::MessageBirdClient;
 use crate::settings::{MailerSetting, MessageBirdSetting, Settings};
 use diesel::r2d2::ConnectionManager;
 use diesel::{r2d2, PgConnection};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::transport::smtp::PoolConfig;
 use lettre::{AsyncSmtpTransport, Tokio1Executor};
-use messagebird::MessageBirdClient;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 

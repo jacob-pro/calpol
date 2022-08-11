@@ -488,7 +488,6 @@ dependencies = [
  "http-api-problem 0.52.0",
  "lettre 0.10.0-rc.6",
  "log",
- "messagebird",
  "rand 0.8.5",
  "reqwest",
  "serde 1.0.136",
@@ -1654,16 +1653,6 @@ name = "memchr"
 version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "308cc39be01b73d0d18f82a0e7b2a3df85245f84af96fdddc5d202d27e47b86a"
-
-[[package]]
-name = "messagebird"
-version = "0.1.0"
-dependencies = [
- "reqwest",
- "serde 1.0.136",
- "serde_json",
- "thiserror",
-]
 
 [[package]]
 name = "migrations_internals"
