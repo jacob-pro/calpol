@@ -691,3 +691,13 @@ paths:
           description: Success
         'default':
           "$ref": "#/components/responses/ApiError"
+  "/v1/re_run":
+    post:
+      operationId: queueReRun
+      tags:
+        - re_run
+      responses:
+        '200':
+          description: Success
+        'default':
+          "$ref": "#/components/responses/ApiError"
