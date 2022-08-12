@@ -65,6 +65,28 @@ components:
       properties:
         next_page:
           type: string
+    PaginatedRequest:
+      type: object
+      properties:
+        page_token:
+          type: string
+    SearchableRequest:
+      type: object
+      properties:
+        search:
+          type: string
+    Unset:
+      type: object
+      description: Unset this field
+      properties:
+        example:
+          type: string
+    SetString:
+      type: object
+      description: Set this field
+      properties:
+        value:
+          type: string
     User:
       type: object
       required:
@@ -110,9 +132,9 @@ components:
         user_agent:
           type: string
 paths:
-  "/sessions/login":
+  "/v1/sessions/login":
     post:
-      operationId: sessionsLogin
+      operationId: login
       tags:
         - sessions
       security: []
@@ -152,9 +174,9 @@ paths:
                   - session
         'default':
           "$ref": "#/components/responses/ApiError"
-  "/sessions/logout":
+  "/v1/sessions/logout":
     delete:
-      operationId: sessionsLogout
+      operationId: logout
       tags:
         - sessions
       responses:
@@ -162,9 +184,9 @@ paths:
           description: Success
         'default':
           "$ref": "#/components/responses/ApiError"
-  "/sessions":
+  "/v1/sessions":
     get:
-      operationId: sessionsList
+      operationId: listSessions
       tags:
         - sessions
       responses:
@@ -174,7 +196,7 @@ paths:
             application/json:
               schema:
                 type: object
-                title: SessionsListResponse
+                title: ListSessionsResponse
                 allOf:
                   - "$ref": "#/components/schemas/PaginatedResponse"
                   - type: object
@@ -187,14 +209,11 @@ paths:
                           "$ref": "#/components/schemas/Session"
         'default':
           "$ref": "#/components/responses/ApiError"
-  "/sessions/{id}":
+  "/v1/sessions/{id}":
     delete:
-      operationId: sessionsDelete
+      operationId: deleteSession
       tags:
         - sessions
-      security:
-        - basicAuth: []
-      description: Allows the user to delete a session from another device/browser
       parameters:
         - name: id
           in: path
@@ -207,4 +226,146 @@ paths:
           description: Success
         'default':
           "$ref": "#/components/responses/ApiError"
-
+  "/v1/users":
+    get:
+      operationId: listUsers
+      tags:
+        - users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              title: ListUsersRequest
+              allOf:
+                - "$ref": "#/components/schemas/PaginatedRequest"
+                - "$ref": "#/components/schemas/SearchableRequest"
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: object
+                title: ListUsersResponse
+                allOf:
+                  - "$ref": "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    required:
+                      - items
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          "$ref": "#/components/schemas/User"
+        'default':
+          "$ref": "#/components/responses/ApiError"
+    post:
+      operationId: createUser
+      tags:
+        - users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              title: CreateUserRequest
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Create user response
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/User"
+        'default':
+          "$ref": "#/components/responses/ApiError"
+  "/v1/users/{id}":
+    get:
+      operationId: getUser
+      tags:
+        - users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: Get user response
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/User"
+        'default':
+          "$ref": "#/components/responses/ApiError"
+    put:
+      operationId: updateUser
+      tags:
+        - users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              title: UpdateUserRequest
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                  format: phone
+                  nullable: true
+                sms_notifications:
+                  type: boolean
+                email_notifications:
+                  type: boolean
+      responses:
+        '200':
+          description: Update user response
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/User"
+        'default':
+          "$ref": "#/components/responses/ApiError"
+    delete:
+      operationId: deleteUser
+      tags:
+        - users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: Success
+        'default':
+          "$ref": "#/components/responses/ApiError"
