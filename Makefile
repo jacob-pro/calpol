@@ -11,3 +11,8 @@ test:
 format:
 	cargo fmt
 	cargo-sort --workspace
+
+.PHONY: api
+api:
+	cd calpol-api && mvn clean compile
+
