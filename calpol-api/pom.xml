@@ -27,6 +27,8 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
                             <output>${project.basedir}/rust-client</output>
                             <configOptions>
                                 <packageName>calpol-client</packageName>
+                                <bestFitInt>true</bestFitInt>
+                                <preferUnsignedInt>true</preferUnsignedInt>
                             </configOptions>
                         </configuration>
                     </execution>

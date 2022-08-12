@@ -75,18 +75,6 @@ components:
       properties:
         search:
           type: string
-    Unset:
-      type: object
-      description: Unset this field
-      properties:
-        example:
-          type: string
-    SetString:
-      type: object
-      description: Set this field
-      properties:
-        value:
-          type: string
     User:
       type: object
       required:
@@ -131,6 +119,44 @@ components:
           type: string
         user_agent:
           type: string
+    Test:
+      type: object
+      required:
+        - name
+        - config
+        - enabled
+        - failure_threshold
+        - failing
+      properties:
+        name:
+          type: string
+        config:
+          type: object
+        enabled:
+          type: boolean
+        failure_threshold:
+          type: integer
+          minimum: 1
+          maximum: 50
+        failing:
+          type: boolean
+    TestResult:
+      type: object
+      required:
+        - test_name
+        - time_started
+        - time_finished
+      properties:
+        test_name:
+          type: string
+        failure_reason:
+          type: string
+        time_started:
+          type: integer
+          format: int64
+        time_finished:
+          type: integer
+          format: int64
 paths:
   "/v1/sessions/login":
     post:
@@ -367,5 +393,193 @@ paths:
       responses:
         '200':
           description: Success
+        'default':
+          "$ref": "#/components/responses/ApiError"
+  "/v1/tests":
+    get:
+      operationId: listTests
+      tags:
+        - tests
+      responses:
+        '200':
+          description: List of tests
+          content:
+            application/json:
+              schema:
+                type: object
+                title: ListTestsResponse
+                allOf:
+                  - type: object
+                    required:
+                      - items
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          "$ref": "#/components/schemas/Test"
+        'default':
+          "$ref": "#/components/responses/ApiError"
+    post:
+      operationId: createTest
+      tags:
+        - tests
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              title: CreateTestRequest
+              required:
+                - name
+                - config
+              properties:
+                name:
+                  type: string
+                config:
+                  type: object
+                enabled:
+                  type: boolean
+                failure_threshold:
+                  type: integer
+                  minimum: 1
+                  maximum: 50
+      responses:
+        '200':
+          description: Create test response
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Test"
+        'default':
+          "$ref": "#/components/responses/ApiError"
+  "/v1/tests/{test_name}":
+    get:
+      operationId: getTest
+      tags:
+        - tests
+      parameters:
+        - name: test_name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Get test response
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Test"
+        'default':
+          "$ref": "#/components/responses/ApiError"
+    put:
+      operationId: updateTest
+      tags:
+        - tests
+      parameters:
+        - name: test_name
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              title: UpdateTestRequest
+              properties:
+                config:
+                  type: object
+                enabled:
+                  type: boolean
+                failure_threshold:
+                  type: integer
+                  minimum: 1
+                  maximum: 50
+      responses:
+        '200':
+          description: Update test response
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Test"
+        'default':
+          "$ref": "#/components/responses/ApiError"
+    delete:
+      operationId: deleteTest
+      tags:
+        - tests
+      parameters:
+        - name: test_name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+        'default':
+          "$ref": "#/components/responses/ApiError"
+  "/v1/test_results":
+    get:
+      operationId: listTestResults
+      tags:
+        - test_results
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              title: ListTestResultsRequest
+              allOf:
+                - "$ref": "#/components/schemas/PaginatedRequest"
+                - type: object
+                  properties:
+                    test_name:
+                      type: string
+      responses:
+        '200':
+          description: Test results list
+          content:
+            application/json:
+              schema:
+                type: object
+                title: ListTestResultsResponse
+                allOf:
+                  - "$ref": "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    required:
+                      - items
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          "$ref": "#/components/schemas/TestResult"
+        'default':
+          "$ref": "#/components/responses/ApiError"
+  "/v1/test_results/summary":
+    get:
+      operationId: summarizeTestResults
+      tags:
+        - test_results
+      responses:
+        '200':
+          description: Test results summary
+          content:
+            application/json:
+              schema:
+                type: object
+                title: SummarizeTestResultsResponse
+                required:
+                  - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/TestResult"
         'default':
           "$ref": "#/components/responses/ApiError"
