@@ -14,6 +14,6 @@ format:
 
 .PHONY: api
 api:
-	rm -rf calpol-api/rust-client
-	cd calpol-api && mvn clean compile
+	rm -rf calpol-api-spec/rust-client
+	cd calpol-api-spec && mvn clean compile
 

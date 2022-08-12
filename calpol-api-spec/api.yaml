@@ -70,6 +70,10 @@ components:
       properties:
         page_token:
           type: string
+        page_size:
+          type: integer
+          minimum: 1
+          maximum: 1000
     SearchableRequest:
       type: object
       properties:
@@ -157,6 +161,26 @@ components:
         time_finished:
           type: integer
           format: int64
+    RunnerLog:
+      type: object
+      required:
+        - time_started
+        - time_finished
+      properties:
+        time_started:
+          type: integer
+          format: int64
+        time_finished:
+          type: integer
+          format: int64
+        failure_reason:
+          type: string
+        tests_passed:
+          type: integer
+        tests_failed:
+          type: integer
+        tests_skipped:
+          type: integer
 paths:
   "/v1/sessions/login":
     post:
@@ -581,5 +605,89 @@ paths:
                     type: array
                     items:
                       "$ref": "#/components/schemas/TestResult"
+        'default':
+          "$ref": "#/components/responses/ApiError"
+  "/v1/runner_logs":
+    get:
+      operationId: listRunnerLogs
+      tags:
+        - runner_logs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              title: ListRunnerLogsRequest
+              allOf:
+                - "$ref": "#/components/schemas/PaginatedRequest"
+      responses:
+        '200':
+          description: Runner logs list
+          content:
+            application/json:
+              schema:
+                type: object
+                title: ListRunnerLogsResponse
+                allOf:
+                  - "$ref": "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    required:
+                      - items
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          "$ref": "#/components/schemas/RunnerLog"
+        'default':
+          "$ref": "#/components/responses/ApiError"
+  "/v1/password_reset":
+    post:
+      operationId: createPasswordReset
+      tags:
+        - password_reset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              title: CreatePasswordResetRequest
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Success
+        'default':
+          "$ref": "#/components/responses/ApiError"
+  "/v1/password_reset/submit":
+    post:
+      operationId: submitPasswordReset
+      tags:
+        - password_reset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              title: SubmitPasswordResetRequest
+              required:
+                - token
+                - new_password
+              properties:
+                token:
+                  type: string
+                new_password:
+                  type: string
+                  minLength: 16
+                  maxLength: 255
+      responses:
+        '200':
+          description: Success
         'default':
           "$ref": "#/components/responses/ApiError"
