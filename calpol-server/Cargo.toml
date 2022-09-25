@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Jacob Halsey <jacob@jhalsey.com>"]
 description = "Multi-Service health monitor"
+default-run = "calpol-server"
 
 [dependencies]
 actix-extensible-rate-limit = "0.2.1"
@@ -42,3 +43,13 @@ twilio = "1.0.0"
 url = { version = "2.2.2", features = ["serde"] }
 validator = { version = "0.14.0", features = ["derive"] }
 x509-parser = "0.12.0"
+utoipa = { version = "2", features = ["actix_extras"] }
+
+[[bin]]
+name = "calpol-server"
+path = "src/main.rs"
+
+[[bin]]
+name = "calpol-server-spec"
+path = "src/openapi.rs"
+

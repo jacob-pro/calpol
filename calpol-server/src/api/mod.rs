@@ -1,6 +1,6 @@
 mod auth;
 mod error;
-mod v1;
+pub mod v1;
 
 use crate::api::error::CalpolApiError;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;

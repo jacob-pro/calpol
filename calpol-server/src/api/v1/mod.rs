@@ -9,7 +9,7 @@ mod users;
 use crate::api::auth::authenticator;
 use crate::api::error::CalpolApiError;
 use crate::api::{api_resource, api_scope, JsonResponse};
-use crate::AppState;
+use crate::state::AppState;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
 use actix_web::web::{Data, ServiceConfig};
 use actix_web::{web, HttpResponse};
@@ -33,6 +33,16 @@ pub fn configure(api: &mut ServiceConfig, rate_limit_backend: &InMemoryBackend) 
     );
 }
 
+#[utoipa::path(
+    post,
+    path = "/v1/re_run",
+    tag = "re_run",
+    operation_id = "requestReRun",
+    responses(
+        (status = 200, description = "Success"),
+    ),
+)]
+/// Request test runner to immediately re-run.
 async fn re_run(state: Data<AppState>) -> Result<HttpResponse, CalpolApiError> {
     state.queue_test_run();
     Ok(().json_response())
