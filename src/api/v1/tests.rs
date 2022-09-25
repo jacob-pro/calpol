@@ -5,12 +5,12 @@ use crate::database::{
     NewTest, Test, TestRepository, TestRepositoryImpl, TestResultRepository,
     TestResultRepositoryImpl,
 };
+use crate::model::api_v1::{CreateTestRequest, TestSummary, UpdateTestRequest};
 use crate::state::AppState;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path, ServiceConfig};
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
-use crate::model::api_v1::{CreateTestRequest, TestSummary, UpdateTestRequest};
 use diesel::Connection;
 use diesel_repository::CrudRepository;
 use http_api_problem::ApiError;

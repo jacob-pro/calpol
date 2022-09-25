@@ -4,13 +4,13 @@ use crate::api::{api_resource, api_scope, auth_rate_limiter, JsonResponse};
 use crate::database::{
     NewSession, SessionRepository, SessionRepositoryImpl, UserRepository, UserRepositoryImpl,
 };
+use crate::model::api_v1::{LoginRequest, LoginResponse, SessionSummary};
 use crate::state::AppState;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path, ServiceConfig};
 use actix_web::{web, HttpRequest, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
-use crate::model::api_v1::{LoginRequest, LoginResponse, SessionSummary};
 use chrono::Utc;
 use diesel_repository::CrudRepository;
 use http_api_problem::ApiError;

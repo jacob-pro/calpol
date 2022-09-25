@@ -4,11 +4,11 @@ use crate::api::v1::converters;
 use crate::api::v1::tests::retrieve_test;
 use crate::api::{api_resource, api_scope, JsonResponse};
 use crate::database::{TestRepositoryImpl, TestResultRepository, TestResultRepositoryImpl};
+use crate::model::api_v1::GetTestResultsRequest;
 use crate::state::AppState;
 use actix_web::web::{Data, Path, ServiceConfig};
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
-use crate::model::api_v1::GetTestResultsRequest;
 use diesel_repository::CrudRepository;
 
 pub fn configure(v1: &mut ServiceConfig) {

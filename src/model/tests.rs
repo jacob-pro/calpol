@@ -115,8 +115,9 @@ fn validate_smtp(smtp: &Smtp) -> Result<(), validator::ValidationError> {
     Ok(())
 }
 
-#[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
+#[allow(clippy::upper_case_acronyms)]
 pub enum SmtpEncryption {
     None,
     STARTTLS,

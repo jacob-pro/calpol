@@ -1,6 +1,6 @@
+use crate::model::tests::Tcp;
 use crate::test_runner::runnable::Domain;
 use anyhow::Context;
-use crate::model::tests::Tcp;
 use std::time::Duration;
 use tokio::time::timeout;
 use url::Url;

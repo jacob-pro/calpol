@@ -5,14 +5,14 @@ use crate::api::{api_resource, api_scope, auth, JsonResponse};
 use crate::database::{
     NewUser, SessionRepository, SessionRepositoryImpl, User, UserRepository, UserRepositoryImpl,
 };
+use crate::model::api_v1::{
+    CreateUserRequest, ListUsersRequest, ListUsersResponse, UpdateUserRequest, UserSummary,
+};
 use crate::state::AppState;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path, ServiceConfig};
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
-use crate::model::api_v1::{
-    CreateUserRequest, ListUsersRequest, ListUsersResponse, UpdateUserRequest, UserSummary,
-};
 use chrono::Utc;
 use diesel::Connection;
 use diesel_repository::CrudRepository;

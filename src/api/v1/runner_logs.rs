@@ -2,11 +2,11 @@ use crate::api::auth::authenticator;
 use crate::api::error::CalpolApiError;
 use crate::api::{api_resource, api_scope, JsonResponse};
 use crate::database::{RunnerLogRepository, RunnerLogRepositoryImpl};
+use crate::model::api_v1::{ListRunnerLogsRequest, ListRunnerLogsResponse};
 use crate::state::AppState;
 use actix_web::web::{Data, ServiceConfig};
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
-use crate::model::api_v1::{ListRunnerLogsRequest, ListRunnerLogsResponse};
 
 pub fn configure(v1: &mut ServiceConfig) {
     let auth = HttpAuthentication::with_fn(authenticator);
@@ -17,6 +17,16 @@ pub fn configure(v1: &mut ServiceConfig) {
     );
 }
 
+/// List the test runner logs
+#[utoipa::path(
+    get,
+    path = "/v1/runner_logs",
+    tag = "runner_logs",
+    operation_id = "listRunnerLogs",
+    responses(
+        (status = 200, description = "List of test runner logs", body = ListRunnerLogsResponse),
+    ),
+)]
 async fn list(
     state: Data<AppState>,
     json: actix_web_validator::Json<ListRunnerLogsRequest>,
@@ -26,7 +36,7 @@ async fn list(
         let log_repository = RunnerLogRepositoryImpl::new(&database);
         let logs = log_repository.find_all(json.limit, json.offset)?;
         let response = ListRunnerLogsResponse {
-            logs: logs.results.into_iter().map(|l| l.into()).collect(),
+            items: logs.results.into_iter().map(|l| l.into()).collect(),
             total: logs.count,
         };
         Ok(response)

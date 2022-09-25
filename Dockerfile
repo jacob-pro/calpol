@@ -1,7 +1,7 @@
 FROM rust:latest AS build
 WORKDIR /build/
 COPY ./ ./
-RUN cargo build --package calpol --release
+RUN cargo build --release
 
 FROM ubuntu:20.04
 RUN apt update && apt install -y libssl-dev libpq-dev ca-certificates

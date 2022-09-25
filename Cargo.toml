@@ -27,7 +27,7 @@ env_logger = "0.8.4"
 futures = "0.3.21"
 http = "0.2.6"
 http-api-problem = { features = ["actix-web", "api-error"], version = "0.52.0" }
-lettre = { features = ["pool", "serde", "tokio1", "tokio1-native-tls"], git = "https://github.com/lettre/lettre", rev = "1391a83" }
+lettre = { features = ["pool", "serde", "tokio1", "tokio1-native-tls"], version = "0.10.1" }
 log = "0.4.14"
 rand = "0.8.5"
 reqwest = { version = "0.11.8", features = ["json"] }
@@ -38,11 +38,10 @@ thiserror = "1.0.30"
 tokio = { version = "1.15.0", features = ["rt-multi-thread", "macros"] }
 tokio-native-tls = "0.3.0"
 trust-dns-resolver = "0.20.3"
-twilio = "1.0.0"
 url = { version = "2.2.2", features = ["serde"] }
+utoipa = { version = "2", features = ["actix_extras"] }
 validator = { version = "0.14.0", features = ["derive", "phone"] }
 x509-parser = "0.12.0"
-utoipa = { version = "2", features = ["actix_extras"] }
 
 [[bin]]
 name = "calpol"

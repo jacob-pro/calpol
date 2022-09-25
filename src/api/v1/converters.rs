@@ -1,6 +1,5 @@
 use crate::api::error::{CalpolApiError, UnexpectedError};
 use crate::database;
-use crate::database::RunnerLog;
 use crate::model::api_v1::*;
 use std::net::IpAddr;
 
@@ -61,12 +60,12 @@ pub fn test_and_result_to_summary(
     }
 }
 
-impl From<crate::database::RunnerLog> for RunnerLogSummary {
-    fn from(log: RunnerLog) -> Self {
-        RunnerLogSummary {
+impl From<database::RunnerLog> for RunnerLog {
+    fn from(log: database::RunnerLog) -> Self {
+        RunnerLog {
             id: log.id,
-            time_started: log.time_started.to_string(),
-            time_finished: log.time_finished.to_string(),
+            time_started: log.time_started.to_rfc3339(),
+            time_finished: log.time_finished.to_rfc3339(),
             success: log.success,
             failure_reason: log.failure_reason,
             tests_passed: log.tests_passed,

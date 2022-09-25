@@ -1,6 +1,6 @@
 use crate::database::Test;
-use crate::test_runner::database::{NotificationTargets, ProcessedTests};
 use crate::state::AppState;
+use crate::test_runner::database::{NotificationTargets, ProcessedTests};
 use anyhow::Context;
 use futures::future::join_all;
 use lettre::message::Mailbox;

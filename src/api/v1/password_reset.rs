@@ -1,13 +1,13 @@
 use crate::api::error::{CalpolApiError, UnexpectedError};
 use crate::api::{api_resource, api_scope, auth, auth_rate_limiter, JsonResponse};
 use crate::database::{User, UserRepository, UserRepositoryImpl};
+use crate::model::api_v1::{ResetPasswordRequest, SubmitPasswordResetRequest};
 use crate::settings::Settings;
 use crate::state::AppState;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, ServiceConfig};
 use actix_web::{web, HttpResponse};
-use crate::model::api_v1::{ResetPasswordRequest, SubmitPasswordResetRequest};
 use chrono::{Duration, Utc};
 use diesel_repository::CrudRepository;
 use http_api_problem::ApiError;

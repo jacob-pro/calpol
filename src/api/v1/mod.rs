@@ -1,10 +1,10 @@
 mod converters;
-mod password_reset;
-mod runner_logs;
-mod sessions;
-mod test_results;
-mod tests;
-mod users;
+pub mod password_reset;
+pub mod runner_logs;
+pub mod sessions;
+pub mod test_results;
+pub mod tests;
+pub mod users;
 
 use crate::api::auth::authenticator;
 use crate::api::error::CalpolApiError;
@@ -33,6 +33,7 @@ pub fn configure(api: &mut ServiceConfig, rate_limit_backend: &InMemoryBackend) 
     );
 }
 
+/// Request test runner to immediately re-run.
 #[utoipa::path(
     post,
     path = "/v1/re_run",
@@ -42,7 +43,6 @@ pub fn configure(api: &mut ServiceConfig, rate_limit_backend: &InMemoryBackend) 
         (status = 200, description = "Success"),
     ),
 )]
-/// Request test runner to immediately re-run.
 async fn re_run(state: Data<AppState>) -> Result<HttpResponse, CalpolApiError> {
     state.queue_test_run();
     Ok(().json_response())

@@ -1,6 +1,7 @@
-use lettre::Address;
 use crate::model::tests::TestConfig;
+use lettre::Address;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use validator::Validate;
 
 const DEFAULT_LIMIT: u32 = 50;
@@ -149,14 +150,14 @@ pub struct ListRunnerLogsRequest {
     pub offset: u32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(ToSchema, Debug, Clone, Serialize, Deserialize)]
 pub struct ListRunnerLogsResponse {
-    pub logs: Vec<RunnerLogSummary>,
+    pub items: Vec<RunnerLog>,
     pub total: i64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RunnerLogSummary {
+#[derive(ToSchema, Debug, Clone, Serialize, Deserialize)]
+pub struct RunnerLog {
     pub id: i32,
     pub time_started: String,
     pub time_finished: String,
@@ -165,4 +166,11 @@ pub struct RunnerLogSummary {
     pub tests_passed: Option<i32>,
     pub tests_failed: Option<i32>,
     pub tests_skipped: Option<i32>,
+}
+
+#[derive(ToSchema, Debug, Clone, Serialize, Deserialize)]
+#[aliases(PaginatedResponseRunnerLog = PaginatedResponse<RunnerLog>)]
+pub struct PaginatedResponse<T> {
+    pub items: Vec<T>,
+    pub total: i64,
 }

@@ -1,7 +1,7 @@
+use crate::model::tests::Http;
 use crate::test_runner::runnable::{verify_certificate_expiry, Domain};
 use anyhow::bail;
 use anyhow::Context;
-use crate::model::tests::Http;
 use http::method::Method;
 use reqwest::redirect;
 use std::str::FromStr;

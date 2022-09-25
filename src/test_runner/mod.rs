@@ -3,10 +3,10 @@ mod notify;
 mod runnable;
 
 use crate::database::Test;
+use crate::model::tests::TestConfig;
 use crate::state::AppState;
 use crate::test_runner::runnable::Runnable;
 use anyhow::Context;
-use crate::model::tests::TestConfig;
 use chrono::{DateTime, Utc};
 use futures::{stream, StreamExt};
 use tokio::sync::mpsc;

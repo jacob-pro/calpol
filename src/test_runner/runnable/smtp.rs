@@ -1,6 +1,6 @@
+use crate::model::tests::{Smtp, SmtpEncryption, SmtpServerType};
 use crate::test_runner::runnable::{verify_certificate_expiry, Domain};
 use anyhow::{bail, Context};
-use crate::model::tests::{Smtp, SmtpEncryption, SmtpServerType};
 use lettre::transport::smtp::client::{AsyncSmtpConnection, TlsParameters};
 use lettre::transport::smtp::extension::ClientId;
 use std::time::Duration;

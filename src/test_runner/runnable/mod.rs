@@ -2,12 +2,12 @@ mod http;
 mod smtp;
 mod tcp;
 
+use crate::model::tests::{IpVersion, TestConfig, TestVariant};
 use crate::test_runner::runnable::http::test_http;
 use crate::test_runner::runnable::smtp::test_smtp;
 use crate::test_runner::runnable::tcp::test_tcp;
 use anyhow::{bail, Context};
 use async_trait::async_trait;
-use crate::model::tests::{IpVersion, TestConfig, TestVariant};
 use chrono::Duration;
 use std::fmt::{Display, Formatter};
 use std::net::{IpAddr, SocketAddr};

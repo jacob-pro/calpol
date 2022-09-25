@@ -17,19 +17,13 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Cargo Test
-        run: cargo test --package calpol -- --nocapture
-
-      - name: Cargo Test Cli
-        run: cargo test --package calpol-cli -- --nocapture
+        run: cargo test -- --nocapture
 
       - name: Cargo Format Check
         run: cargo fmt -- --check
 
       - name: Cargo Clippy Check
-        run: cargo clippy --package calpol
-
-      - name: Cargo Clippy Check Cli
-        run: cargo clippy --package calpol-cli
+        run: cargo clippy
 
       - name: Cargo Sort Check
         run: cargo install cargo-sort --debug && cargo-sort --workspace --check
