@@ -1,6 +1,6 @@
 use actix_web::error::{BlockingError, PathError};
 use actix_web::http::StatusCode;
-use actix_web::{HttpResponse, ResponseError};
+use actix_web::ResponseError;
 use bcrypt::BcryptError;
 use http_api_problem::ApiError;
 use lettre::transport::smtp;
@@ -32,7 +32,9 @@ impl ResponseError for CalpolApiError {
         match &self {
             CalpolApiError::ApiError(a) => a.error_response(),
             CalpolApiError::InternalServerError(_, _) => {
-                HttpResponse::InternalServerError().finish()
+                ApiError::builder(StatusCode::INTERNAL_SERVER_ERROR)
+                    .finish()
+                    .into_actix_web_response()
             }
         }
     }

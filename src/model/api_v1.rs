@@ -1,4 +1,5 @@
 use crate::model::tests::TestConfig;
+use chrono::{DateTime, Utc};
 use lettre::Address;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -159,9 +160,8 @@ pub struct ListRunnerLogsResponse {
 #[derive(ToSchema, Debug, Clone, Serialize, Deserialize)]
 pub struct RunnerLog {
     pub id: i32,
-    pub time_started: String,
-    pub time_finished: String,
-    pub success: bool,
+    pub time_started: DateTime<Utc>,
+    pub time_finished: DateTime<Utc>,
     pub failure_reason: Option<String>,
     pub tests_passed: Option<i32>,
     pub tests_failed: Option<i32>,

@@ -64,9 +64,8 @@ impl From<database::RunnerLog> for RunnerLog {
     fn from(log: database::RunnerLog) -> Self {
         RunnerLog {
             id: log.id,
-            time_started: log.time_started.to_rfc3339(),
-            time_finished: log.time_finished.to_rfc3339(),
-            success: log.success,
+            time_started: log.time_started,
+            time_finished: log.time_finished,
             failure_reason: log.failure_reason,
             tests_passed: log.tests_passed,
             tests_failed: log.tests_failed,
