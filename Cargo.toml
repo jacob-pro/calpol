@@ -1,7 +1,54 @@
-[workspace]
-members = [
-    "calpol-cli",
-    "calpol-model",
-    "calpol-server",
-]
-resolver = "2"
+[package]
+name = "calpol"
+version = "0.1.0"
+edition = "2021"
+authors = ["Jacob Halsey <jacob@jhalsey.com>"]
+description = "Multi-Service health monitor"
+default-run = "calpol"
+
+[dependencies]
+actix-extensible-rate-limit = "0.2.1"
+actix-web = "4.0.1"
+actix-web-httpauth = "0.6.0"
+actix-web-validator = "3.0.0"
+anyhow = "1.0.52"
+async-trait = "0.1.52"
+base64 = "0.13.0"
+bcrypt = "0.10"
+bincode = "1.3.3"
+chrono = "0.4"
+clap = { version = "=3.0.0-rc.8", features = ["derive", "env"] }
+config = { version = "0.11", features = ["toml"] }
+diesel = { version = "1.4.8", features = ["postgres", "r2d2", "chrono", "serde_json"] }
+diesel-postgres = { git = "https://github.com/jacob-pro/diesel-postgres", rev = "a73ad0b" }
+diesel-repository = { git = "https://github.com/jacob-pro/diesel-repository.git", rev = "058c63b" }
+diesel_migrations = "1.4.0"
+env_logger = "0.8.4"
+futures = "0.3.21"
+http = "0.2.6"
+http-api-problem = { features = ["actix-web", "api-error"], version = "0.52.0" }
+lettre = { features = ["pool", "serde", "tokio1", "tokio1-native-tls"], git = "https://github.com/lettre/lettre", rev = "1391a83" }
+log = "0.4.14"
+rand = "0.8.5"
+reqwest = { version = "0.11.8", features = ["json"] }
+serde = "1.0"
+serde_json = "1.0"
+serde_plain = "1.0.0"
+thiserror = "1.0.30"
+tokio = { version = "1.15.0", features = ["rt-multi-thread", "macros"] }
+tokio-native-tls = "0.3.0"
+trust-dns-resolver = "0.20.3"
+twilio = "1.0.0"
+url = { version = "2.2.2", features = ["serde"] }
+validator = { version = "0.14.0", features = ["derive", "phone"] }
+x509-parser = "0.12.0"
+utoipa = { version = "2", features = ["actix_extras"] }
+
+[[bin]]
+name = "calpol"
+path = "src/main.rs"
+
+[[bin]]
+name = "calpol-spec"
+path = "src/openapi.rs"
+
