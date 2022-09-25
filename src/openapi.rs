@@ -15,9 +15,15 @@ mod settings;
 mod state;
 mod test_runner;
 
+use crate::api::error::CalpolApiError;
+use std::fs;
+use std::path::PathBuf;
 use utoipa::openapi::security::{Http, HttpAuthScheme, SecurityScheme};
-use utoipa::openapi::SecurityRequirement;
-use utoipa::{Modify, OpenApi};
+use utoipa::openapi::{
+    Content, ContentBuilder, Object, ObjectBuilder, Response, ResponseBuilder, Schema,
+    SecurityRequirement,
+};
+use utoipa::{Modify, OpenApi, ToResponse};
 
 struct SecurityAddon;
 
@@ -38,6 +44,9 @@ impl Modify for SecurityAddon {
         schemas(
             model::api_v1::ListRunnerLogsResponse,
             model::api_v1::RunnerLog,
+        ),
+        responses(
+            api::error::CalpolApiError,
         )
     ),
     paths(
@@ -48,6 +57,48 @@ impl Modify for SecurityAddon {
 )]
 struct ApiDoc;
 
+impl ToResponse for CalpolApiError {
+    fn response() -> (String, Response) {
+        let json = include_str!("api_problem.yaml");
+        (
+            String::from("ApiError"),
+            serde_yaml::from_str(json).unwrap(),
+        )
+    }
+}
+
+fn api_yaml() -> String {
+    serde_yaml::to_string(&ApiDoc::openapi()).unwrap()
+}
+
+fn path() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("spec")
+        .join("api.yaml")
+}
+
 fn main() {
-    println!("{}", ApiDoc::openapi().to_pretty_json().unwrap());
+    fs::write(path(), api_yaml());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn test_api_spec_matches() {
+        let on_disk = fs::read_to_string(path())
+            .expect("Unable to read api spec")
+            .lines()
+            .map(ToOwned::to_owned)
+            .collect::<Vec<_>>();
+        let actual = api_yaml()
+            .lines()
+            .map(ToOwned::to_owned)
+            .collect::<Vec<_>>();
+        if on_disk != actual {
+            panic!("API spec doesn't match. Run `cargo run --bin calpol-spec` to regenerate it")
+        }
+    }
 }

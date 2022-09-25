@@ -489,6 +489,7 @@ dependencies = [
  "serde 1.0.145",
  "serde_json",
  "serde_plain",
+ "serde_yaml",
  "thiserror",
  "tokio",
  "tokio-native-tls",
@@ -2099,6 +2100,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_yaml"
+version = "0.9.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8613d593412a0deb7bbd8de9d908efff5a0cb9ccd8f62c641e7b2ed2f57291d1"
+dependencies = [
+ "indexmap",
+ "itoa",
+ "ryu",
+ "serde 1.0.145",
+ "unsafe-libyaml",
+]
+
+[[package]]
 name = "sha1"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2447,6 +2461,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fdbf052a0783de01e944a6ce7a8cb939e295b1e7be835a1112c3b9a7f047a5a"
 
 [[package]]
+name = "unsafe-libyaml"
+version = "0.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1e5fa573d8ac5f1a856f8d7be41d390ee973daf97c806b2c1a465e4e1406e68"
+
+[[package]]
 name = "url"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2461,8 +2481,7 @@ dependencies = [
 [[package]]
 name = "utoipa"
 version = "2.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6289c644ea23411b0f81773544ee2a59e7497b8867f268fb30b330dea87cb360"
+source = "git+https://github.com/juhaku/utoipa#f3f1186ddfc2bd186f4226c0faa70220a7ef2bd4"
 dependencies = [
  "indexmap",
  "serde 1.0.145",
@@ -2473,8 +2492,7 @@ dependencies = [
 [[package]]
 name = "utoipa-gen"
 version = "2.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ecf8547910b3e16a2e3506c2edf30c569462b7a975a4435dc5001a92314b43f1"
+source = "git+https://github.com/juhaku/utoipa#f3f1186ddfc2bd186f4226c0faa70220a7ef2bd4"
 dependencies = [
  "lazy_static",
  "proc-macro-error",

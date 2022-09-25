@@ -1,5 +1,5 @@
 mod auth;
-mod error;
+pub mod error;
 pub mod v1;
 
 use crate::api::error::CalpolApiError;
