@@ -9,3 +9,7 @@ test:
 format:
 	cargo fmt
 	cargo-sort --workspace
+
+.PHONY: spec
+spec:
+	cargo run --bin calpol-spec

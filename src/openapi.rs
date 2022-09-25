@@ -98,7 +98,7 @@ mod tests {
             .map(ToOwned::to_owned)
             .collect::<Vec<_>>();
         if on_disk != actual {
-            panic!("API spec doesn't match. Run `cargo run --bin calpol-spec` to regenerate it")
+            panic!("API spec doesn't match. Run `make spec` to regenerate it")
         }
     }
 }
