@@ -57,16 +57,6 @@ impl Modify for SecurityAddon {
 )]
 struct ApiDoc;
 
-impl ToResponse for CalpolApiError {
-    fn response() -> (String, Response) {
-        let json = include_str!("api_problem.yaml");
-        (
-            String::from("ApiError"),
-            serde_yaml::from_str(json).unwrap(),
-        )
-    }
-}
-
 fn api_yaml() -> String {
     serde_yaml::to_string(&ApiDoc::openapi()).unwrap()
 }

@@ -6,6 +6,7 @@ use http_api_problem::ApiError;
 use lettre::transport::smtp;
 use std::fmt::Debug;
 use thiserror::Error;
+use utoipa::ToResponse;
 use validator::ValidationErrors;
 
 #[derive(Debug, Error)]
@@ -18,6 +19,16 @@ pub enum CalpolApiError {
     ),
     #[error("{0}: {1}")]
     InternalServerError(&'static str, #[source] Box<dyn std::error::Error + Send>),
+}
+
+impl ToResponse for CalpolApiError {
+    fn response() -> (String, utoipa::openapi::Response) {
+        let json = include_str!("../../resources/api_problem.yaml");
+        (
+            String::from("ApiError"),
+            serde_yaml::from_str(json).unwrap(),
+        )
+    }
 }
 
 impl ResponseError for CalpolApiError {
@@ -57,7 +68,7 @@ impl From<actix_web_validator::Error> for CalpolApiError {
         match e {
             actix_web_validator::Error::Validate(v) => v.into(),
             _ => ApiError::builder(StatusCode::BAD_REQUEST)
-                .message(format!("{}", e))
+                .message(e.to_string())
                 .finish()
                 .into(),
         }

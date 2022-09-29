@@ -21,7 +21,7 @@ paths:
         '200':
           description: Success
         default:
-          description: Success
+          $ref: '#/components/responses/ApiError'
       deprecated: false
   /v1/runner_logs:
     get:
@@ -38,6 +38,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListRunnerLogsResponse'
+        default:
+          $ref: '#/components/responses/ApiError'
       deprecated: false
 components:
   schemas:

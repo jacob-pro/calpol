@@ -41,7 +41,7 @@ pub fn configure(api: &mut ServiceConfig, rate_limit_backend: &InMemoryBackend) 
     operation_id = "requestReRun",
     responses(
         (status = 200, description = "Success"),
-        (status = "default", description = "Success"),
+        (status = "default", response = CalpolApiError),
     ),
 )]
 async fn re_run(state: Data<AppState>) -> Result<HttpResponse, CalpolApiError> {

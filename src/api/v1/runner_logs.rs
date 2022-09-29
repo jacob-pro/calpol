@@ -25,6 +25,7 @@ pub fn configure(v1: &mut ServiceConfig) {
     operation_id = "listRunnerLogs",
     responses(
         (status = 200, description = "List of test runner logs", body = ListRunnerLogsResponse),
+        (status = "default", response = CalpolApiError)
     ),
 )]
 async fn list(
