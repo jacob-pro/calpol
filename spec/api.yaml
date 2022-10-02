@@ -9,14 +9,54 @@ info:
     name: ''
   version: 0.1.0
 paths:
-  /v1/re_run:
+  /v1/password_reset/:
     post:
       tags:
-      - re_run
-      summary: Request test runner to immediately re-run.
+      - PasswordReset
+      summary: Request a password reset token
       description: |
-        Request test runner to immediately re-run.
-      operationId: requestReRun
+        Request a password reset token
+      operationId: Request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+        required: true
+      responses:
+        '200':
+          description: Success
+        default:
+          $ref: '#/components/responses/ApiError'
+      deprecated: false
+  /v1/password_reset/submit:
+    post:
+      tags:
+      - PasswordReset
+      summary: Submit a password reset token
+      description: |
+        Submit a password reset token
+      operationId: Submit
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitPasswordResetRequest'
+        required: true
+      responses:
+        '200':
+          description: Success
+        default:
+          $ref: '#/components/responses/ApiError'
+      deprecated: false
+  /v1/runner/queue:
+    post:
+      tags:
+      - Runner
+      summary: Queue the test runner to immediately re-run.
+      description: |
+        Queue the test runner to immediately re-run.
+      operationId: Queue
       responses:
         '200':
           description: Success
@@ -26,11 +66,11 @@ paths:
   /v1/runner_logs:
     get:
       tags:
-      - runner_logs
+      - RunnerLogs
       summary: List the test runner logs
       description: |
         List the test runner logs
-      operationId: listRunnerLogs
+      operationId: ListRunnerLogs
       responses:
         '200':
           description: List of test runner logs
@@ -83,6 +123,17 @@ components:
         time_started:
           type: string
           format: date-time
+    SubmitPasswordResetRequest:
+      type: object
+      required:
+      - token
+      - new_password
+      properties:
+        new_password:
+          type: string
+          format: password
+        token:
+          type: string
   responses:
     ApiError:
       description: An Api Problem (RFC7807)

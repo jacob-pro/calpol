@@ -1,7 +1,7 @@
 use crate::api::error::{CalpolApiError, UnexpectedError};
 use crate::api::{api_resource, api_scope, auth, auth_rate_limiter, JsonResponse};
 use crate::database::{User, UserRepository, UserRepositoryImpl};
-use crate::model::api_v1::{ResetPasswordRequest, SubmitPasswordResetRequest};
+use crate::model::api_v1::{PasswordResetRequest, SubmitPasswordResetRequest};
 use crate::settings::Settings;
 use crate::state::AppState;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
@@ -18,7 +18,7 @@ const TOKEN_EXPIRY_HOURS: i64 = 12;
 pub fn configure(v1: &mut ServiceConfig, rl_backend: &InMemoryBackend) {
     v1.service(
         api_scope("password_reset")
-            .service(api_resource("request").route(web::post().to(request)))
+            .service(api_resource("").route(web::post().to(request)))
             .service(api_resource("submit").route(web::post().to(submit)))
             .wrap(auth_rate_limiter(rl_backend)),
     );
@@ -51,9 +51,21 @@ where
     Ok(())
 }
 
+/// Request a password reset token
+#[utoipa::path(
+    post,
+    path = "/v1/password_reset/",
+    tag = "PasswordReset",
+    operation_id = "Request",
+    request_body = PasswordResetRequest,
+    responses(
+        (status = 200, description = "Success"),
+        (status = "default", response = CalpolApiError)
+    ),
+)]
 async fn request(
     state: Data<AppState>,
-    json: actix_web_validator::Json<ResetPasswordRequest>,
+    json: actix_web_validator::Json<PasswordResetRequest>,
 ) -> Result<HttpResponse, CalpolApiError> {
     let database = state.database();
     let user = web::block(move || -> Result<_, CalpolApiError> {
@@ -73,6 +85,18 @@ async fn request(
     Ok(().json_response())
 }
 
+/// Submit a password reset token
+#[utoipa::path(
+    post,
+    path = "/v1/password_reset/submit",
+    tag = "PasswordReset",
+    operation_id = "Submit",
+    request_body = SubmitPasswordResetRequest,
+    responses(
+        (status = 200, description = "Success"),
+        (status = "default", response = CalpolApiError)
+    ),
+)]
 async fn submit(
     state: Data<AppState>,
     json: actix_web_validator::Json<SubmitPasswordResetRequest>,

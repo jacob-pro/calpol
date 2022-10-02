@@ -2,8 +2,8 @@
 test:
 	cargo fmt -- --check
 	cargo-sort --check --workspace
-	cargo clippy -- -D warnings
 	cargo test --all-features
+	cargo clippy -- -D warnings
 
 .PHONY: format
 format:

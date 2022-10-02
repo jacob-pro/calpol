@@ -82,15 +82,16 @@ pub struct UpdateUserRequest {
     pub email_notifications: Option<bool>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
-pub struct ResetPasswordRequest {
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+pub struct PasswordResetRequest {
     pub email: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct SubmitPasswordResetRequest {
     pub token: String,
     #[validate(length(min = 16, max = 255))]
+    #[schema(format=Password)]
     pub new_password: String,
 }
 

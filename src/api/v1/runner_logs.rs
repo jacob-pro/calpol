@@ -21,8 +21,8 @@ pub fn configure(v1: &mut ServiceConfig) {
 #[utoipa::path(
     get,
     path = "/v1/runner_logs",
-    tag = "runner_logs",
-    operation_id = "listRunnerLogs",
+    tag = "RunnerLogs",
+    operation_id = "ListRunnerLogs",
     responses(
         (status = 200, description = "List of test runner logs", body = ListRunnerLogsResponse),
         (status = "default", response = CalpolApiError)

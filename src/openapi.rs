@@ -44,13 +44,16 @@ impl Modify for SecurityAddon {
         schemas(
             model::api_v1::ListRunnerLogsResponse,
             model::api_v1::RunnerLog,
+            model::api_v1::SubmitPasswordResetRequest,
         ),
         responses(
             api::error::CalpolApiError,
         )
     ),
     paths(
-        api::v1::re_run,
+        api::v1::password_reset::request,
+        api::v1::password_reset::submit,
+        api::v1::runner::queue,
         api::v1::runner_logs::list,
     ),
     modifiers(&SecurityAddon)
