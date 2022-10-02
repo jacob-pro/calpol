@@ -43,7 +43,19 @@ pub fn configure(v1: &mut ServiceConfig, rate_limit_backend: &InMemoryBackend) {
     );
 }
 
-async fn login(
+/// Login with email and password
+#[utoipa::path(
+    post,
+    path = "/v1/sessions/login",
+    tag = "Sessions",
+    operation_id = "Login",
+    request_body = LoginRequest,
+    responses(
+        (status = 200, description = "User account and session details", body = LoginResponse),
+        (status = "default", response = CalpolApiError)
+    ),
+)]
+pub async fn login(
     json: actix_web_validator::Json<LoginRequest>,
     state: Data<AppState>,
     req: HttpRequest,
@@ -105,6 +117,17 @@ async fn login(
     .map(JsonResponse::json_response)
 }
 
+/// Logout (delete) session
+#[utoipa::path(
+    delete,
+    path = "/v1/sessions/logout",
+    tag = "Sessions",
+    operation_id = "Logout",
+    responses(
+        (status = 200, description = "Success"),
+        (status = "default", response = CalpolApiError)
+    ),
+)]
 async fn logout(auth: Auth, state: Data<AppState>) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();

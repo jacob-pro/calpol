@@ -7,13 +7,14 @@ use validator::Validate;
 
 const DEFAULT_LIMIT: u32 = 50;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct LoginRequest {
     pub email: String,
+    #[schema(format=Password)]
     pub password: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct UserSummary {
     pub id: i32,
     pub name: String,
@@ -23,7 +24,7 @@ pub struct UserSummary {
     pub email_notifications: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct SessionSummary {
     pub id: i32,
     pub created: i64,
@@ -32,7 +33,7 @@ pub struct SessionSummary {
     pub user_agent: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct LoginResponse {
     pub user: UserSummary,
     pub session: SessionSummary,

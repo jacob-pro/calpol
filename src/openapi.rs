@@ -45,6 +45,11 @@ impl Modify for SecurityAddon {
             model::api_v1::ListRunnerLogsResponse,
             model::api_v1::RunnerLog,
             model::api_v1::SubmitPasswordResetRequest,
+            model::api_v1::PasswordResetRequest,
+            model::api_v1::LoginResponse,
+            model::api_v1::LoginRequest,
+            model::api_v1::UserSummary,
+            model::api_v1::SessionSummary,
         ),
         responses(
             api::error::CalpolApiError,
@@ -55,6 +60,8 @@ impl Modify for SecurityAddon {
         api::v1::password_reset::submit,
         api::v1::runner::queue,
         api::v1::runner_logs::list,
+        api::v1::sessions::login,
+        api::v1::sessions::logout,
     ),
     modifiers(&SecurityAddon)
 )]
