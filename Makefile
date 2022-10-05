@@ -13,3 +13,8 @@ format:
 .PHONY: spec
 spec:
 	cargo run --bin calpol-spec
+
+.PHONY: clients
+clients: spec
+	rm -rf ./spec/rust-client/
+	cd ./spec && mvn clean package

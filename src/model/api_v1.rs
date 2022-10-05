@@ -34,6 +34,12 @@ pub struct SessionSummary {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct ListSessionsResponse {
+    pub items: Vec<SessionSummary>,
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct LoginResponse {
     pub user: UserSummary,
     pub session: SessionSummary,
@@ -61,7 +67,7 @@ impl Default for ListUsersRequest {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListUsersResponse {
-    pub users: Vec<UserSummary>,
+    pub items: Vec<UserSummary>,
     pub total: i64,
 }
 

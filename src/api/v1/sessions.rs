@@ -4,7 +4,7 @@ use crate::api::{api_resource, api_scope, auth_rate_limiter, JsonResponse};
 use crate::database::{
     NewSession, SessionRepository, SessionRepositoryImpl, UserRepository, UserRepositoryImpl,
 };
-use crate::model::api_v1::{LoginRequest, LoginResponse, SessionSummary};
+use crate::model::api_v1::{ListSessionsResponse, LoginRequest, LoginResponse, SessionSummary};
 use crate::state::AppState;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
 use actix_web::http::StatusCode;
@@ -139,6 +139,17 @@ async fn logout(auth: Auth, state: Data<AppState>) -> Result<HttpResponse, Calpo
     .map(JsonResponse::json_response)
 }
 
+/// List this users active sessions
+#[utoipa::path(
+    get,
+    path = "/v1/sessions",
+    tag = "Sessions",
+    operation_id = "ListSessions",
+    responses(
+        (status = 200, description = "List of sessions", body = ListSessionsResponse),
+        (status = "default", response = CalpolApiError)
+    ),
+)]
 async fn list(auth: Auth, state: Data<AppState>) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
@@ -148,12 +159,28 @@ async fn list(auth: Auth, state: Data<AppState>) -> Result<HttpResponse, CalpolA
             .into_iter()
             .map(|s| s.into())
             .collect();
-        Ok(sessions)
+        Ok(ListSessionsResponse {
+            items: sessions
+        })
     })
     .await?
     .map(JsonResponse::json_response)
 }
 
+/// Delete a session by id
+#[utoipa::path(
+    delete,
+    path = "/v1/sessions/{id}",
+    params(
+        ("id" = i32, Path, description = "Session id to delete")
+    ),
+    tag = "Sessions",
+    operation_id = "DeleteSession",
+    responses(
+        (status = 200, description = "Success"),
+        (status = "default", response = CalpolApiError)
+    ),
+)]
 async fn delete(
     auth: Auth,
     session_id: Path<i32>,

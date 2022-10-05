@@ -56,7 +56,7 @@ async fn list(
                 UserRepository::find_all(&user_repository, query.limit, query.offset)
             })?;
         Ok(ListUsersResponse {
-            users: result.results.into_iter().map(|x| x.into()).collect(),
+            items: result.results.into_iter().map(|x| x.into()).collect(),
             total: result.count,
         })
     })

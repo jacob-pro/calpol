@@ -50,6 +50,7 @@ impl Modify for SecurityAddon {
             model::api_v1::LoginRequest,
             model::api_v1::UserSummary,
             model::api_v1::SessionSummary,
+            model::api_v1::ListSessionsResponse,
         ),
         responses(
             api::error::CalpolApiError,
@@ -62,15 +63,19 @@ impl Modify for SecurityAddon {
         api::v1::runner_logs::list,
         api::v1::sessions::login,
         api::v1::sessions::logout,
+        api::v1::sessions::list,
+        api::v1::sessions::delete,
     ),
     modifiers(&SecurityAddon)
 )]
-struct ApiDoc;
+struct UtoipaSpec;
 
+/// YAML serialized OpenAPI spec generated from the Utoipa annotations.
 fn api_yaml() -> String {
-    serde_yaml::to_string(&ApiDoc::openapi()).unwrap()
+    serde_yaml::to_string(&UtoipaSpec::openapi()).unwrap()
 }
 
+/// Path to the API spec file
 fn path() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("spec")
@@ -85,6 +90,7 @@ fn main() {
 mod tests {
     use super::*;
     use std::fs;
+    use std::process::Command;
 
     #[test]
     fn test_api_spec_matches() {
@@ -101,4 +107,6 @@ mod tests {
             panic!("API spec doesn't match. Run `make spec` to regenerate it")
         }
     }
+
+
 }
