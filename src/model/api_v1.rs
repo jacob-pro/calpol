@@ -38,7 +38,6 @@ pub struct ListSessionsResponse {
     pub items: Vec<SessionSummary>,
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct LoginResponse {
     pub user: UserSummary,

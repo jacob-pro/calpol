@@ -107,6 +107,4 @@ mod tests {
             panic!("API spec doesn't match. Run `make spec` to regenerate it")
         }
     }
-
-
 }

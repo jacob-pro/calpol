@@ -159,9 +159,7 @@ async fn list(auth: Auth, state: Data<AppState>) -> Result<HttpResponse, CalpolA
             .into_iter()
             .map(|s| s.into())
             .collect();
-        Ok(ListSessionsResponse {
-            items: sessions
-        })
+        Ok(ListSessionsResponse { items: sessions })
     })
     .await?
     .map(JsonResponse::json_response)
