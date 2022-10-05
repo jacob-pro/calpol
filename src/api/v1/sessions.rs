@@ -54,6 +54,7 @@ pub fn configure(v1: &mut ServiceConfig, rate_limit_backend: &InMemoryBackend) {
         (status = 200, description = "User account and session details", body = LoginResponse),
         (status = "default", response = CalpolApiError)
     ),
+    security(),
 )]
 pub async fn login(
     json: actix_web_validator::Json<LoginRequest>,

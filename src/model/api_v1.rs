@@ -146,6 +146,11 @@ pub struct TestResultSummary {
     pub time_finished: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct ListTestResultsResponse {
+    pub items: Vec<TestResultSummary>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct GetTestResultsRequest {
     pub limit: u32,

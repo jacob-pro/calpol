@@ -123,6 +123,7 @@ paths:
         default:
           $ref: '#/components/responses/ApiError'
       deprecated: false
+      security: []
   /v1/sessions/logout:
     delete:
       tags:
@@ -160,6 +161,24 @@ paths:
         default:
           $ref: '#/components/responses/ApiError'
       deprecated: false
+  /v1/test_results:
+    get:
+      tags:
+      - TestResults
+      summary: List test results
+      description: |
+        List test results
+      operationId: ListTestResults
+      responses:
+        '200':
+          description: List of test results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListTestResultsResponse'
+        default:
+          $ref: '#/components/responses/ApiError'
+      deprecated: false
 components:
   schemas:
     ListRunnerLogsResponse:
@@ -184,6 +203,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SessionSummary'
+    ListTestResultsResponse:
+      type: object
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestResultSummary'
     LoginRequest:
       type: object
       required:

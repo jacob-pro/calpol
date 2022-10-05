@@ -4,7 +4,7 @@ use crate::api::v1::converters;
 use crate::api::v1::tests::retrieve_test;
 use crate::api::{api_resource, api_scope, JsonResponse};
 use crate::database::{TestRepositoryImpl, TestResultRepository, TestResultRepositoryImpl};
-use crate::model::api_v1::GetTestResultsRequest;
+use crate::model::api_v1::{GetTestResultsRequest, ListTestResultsResponse};
 use crate::state::AppState;
 use actix_web::web::{Data, Path, ServiceConfig};
 use actix_web::{web, HttpResponse};
@@ -21,6 +21,17 @@ pub fn configure(v1: &mut ServiceConfig) {
     );
 }
 
+/// List test results
+#[utoipa::path(
+    get,
+    path = "/v1/test_results",
+    tag = "TestResults",
+    operation_id = "ListTestResults",
+    responses(
+        (status = 200, description = "List of test results", body = ListTestResultsResponse),
+        (status = "default", response = CalpolApiError)
+    ),
+)]
 async fn list(state: Data<AppState>) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
@@ -39,7 +50,7 @@ async fn list(state: Data<AppState>) -> Result<HttpResponse, CalpolApiError> {
             .filter_map(|(t, r)| r.map(|r| (t, r)))
             .map(|(t, r)| converters::test_and_result_to_summary(&t, r))
             .collect::<Vec<_>>();
-        Ok(summaries)
+        Ok(ListTestResultsResponse { items: summaries })
     })
     .await?
     .map(JsonResponse::json_response)

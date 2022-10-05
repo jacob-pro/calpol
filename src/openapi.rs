@@ -51,6 +51,7 @@ impl Modify for SecurityAddon {
             model::api_v1::UserSummary,
             model::api_v1::SessionSummary,
             model::api_v1::ListSessionsResponse,
+            model::api_v1::ListTestResultsResponse,
         ),
         responses(
             api::error::CalpolApiError,
@@ -65,6 +66,7 @@ impl Modify for SecurityAddon {
         api::v1::sessions::logout,
         api::v1::sessions::list,
         api::v1::sessions::delete,
+        api::v1::test_results::list,
     ),
     modifiers(&SecurityAddon)
 )]
