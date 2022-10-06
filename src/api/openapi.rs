@@ -30,6 +30,10 @@ impl Modify for SecurityAddon {
             crate::model::api_v1::SessionSummary,
             crate::model::api_v1::ListSessionsResponse,
             crate::model::api_v1::ListTestResultsResponse,
+            crate::model::api_v1::ListTestsResponse,
+            crate::model::api_v1::CreateTestRequest,
+            crate::model::api_v1::TestSummary,
+            crate::model::api_v1::UpdateTestRequest,
         ),
         responses(
             crate::api::error::CalpolApiError,
@@ -45,6 +49,9 @@ impl Modify for SecurityAddon {
         crate::api::v1::sessions::list,
         crate::api::v1::sessions::delete,
         crate::api::v1::test_results::list,
+        crate::api::v1::tests::list,
+        crate::api::v1::tests::create,
+        crate::api::v1::tests::update,
     ),
     modifiers(&SecurityAddon)
 )]

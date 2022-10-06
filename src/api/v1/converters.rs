@@ -1,4 +1,3 @@
-use crate::api::error::{CalpolApiError, UnexpectedError};
 use crate::database;
 use crate::model::api_v1::*;
 use std::net::IpAddr;
@@ -31,19 +30,15 @@ impl From<database::Session> for SessionSummary {
     }
 }
 
-impl TryFrom<database::Test> for TestSummary {
-    type Error = CalpolApiError;
-
-    fn try_from(test: database::Test) -> Result<Self, Self::Error> {
-        let config =
-            serde_json::from_value(test.config).map_err(UnexpectedError::TestDeserialization)?;
-        Ok(Self {
+impl From<database::Test> for TestSummary {
+    fn from(test: database::Test) -> Self {
+        Self {
             name: test.name,
-            config,
+            config: test.config,
             enabled: test.enabled,
             failure_threshold: test.failure_threshold as u8,
             failing: test.failing,
-        })
+        }
     }
 }
 

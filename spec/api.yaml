@@ -29,6 +29,7 @@ paths:
         default:
           $ref: '#/components/responses/ApiError'
       deprecated: false
+      security: []
   /v1/password_reset/submit:
     post:
       tags:
@@ -49,6 +50,7 @@ paths:
         default:
           $ref: '#/components/responses/ApiError'
       deprecated: false
+      security: []
   /v1/runner/queue:
     post:
       tags:
@@ -179,8 +181,96 @@ paths:
         default:
           $ref: '#/components/responses/ApiError'
       deprecated: false
+  /v1/tests:
+    get:
+      tags:
+      - Tests
+      summary: List tests
+      description: |
+        List tests
+      operationId: ListTests
+      responses:
+        '200':
+          description: List of test results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListTestsResponse'
+        default:
+          $ref: '#/components/responses/ApiError'
+      deprecated: false
+    post:
+      tags:
+      - Tests
+      summary: Create a new test
+      description: |
+        Create a new test
+      operationId: CreateTest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTestRequest'
+        required: true
+      responses:
+        '200':
+          description: The created test
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestSummary'
+        default:
+          $ref: '#/components/responses/ApiError'
+      deprecated: false
+  /v1/tests/{name}:
+    get:
+      tags:
+      - Tests
+      summary: Update a test
+      description: |
+        Update a test
+      operationId: UpdateTest
+      parameters:
+      - name: name
+        in: path
+        description: Test name to update
+        required: true
+        deprecated: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTestRequest'
+        required: true
+      responses:
+        '200':
+          description: The created test
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestSummary'
+        default:
+          $ref: '#/components/responses/ApiError'
+      deprecated: false
 components:
   schemas:
+    CreateTestRequest:
+      type: object
+      required:
+      - name
+      - config
+      properties:
+        config:
+          type: object
+        enabled:
+          type: boolean
+        failure_threshold:
+          type: integer
+          format: int32
+        name:
+          type: string
     ListRunnerLogsResponse:
       type: object
       required:
@@ -212,6 +302,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TestResultSummary'
+    ListTestsResponse:
+      type: object
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestSummary'
     LoginRequest:
       type: object
       required:
@@ -303,6 +402,38 @@ components:
           format: password
         token:
           type: string
+    TestSummary:
+      type: object
+      required:
+      - name
+      - config
+      - enabled
+      - failure_threshold
+      - failing
+      properties:
+        config:
+          type: object
+        enabled:
+          type: boolean
+        failing:
+          type: boolean
+        failure_threshold:
+          type: integer
+          format: int32
+        name:
+          type: string
+    UpdateTestRequest:
+      type: object
+      required:
+      - config
+      properties:
+        config:
+          type: object
+        enabled:
+          type: boolean
+        failure_threshold:
+          type: integer
+          format: int32
     UserSummary:
       type: object
       required:

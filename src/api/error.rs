@@ -1,12 +1,11 @@
 use actix_web::error::{BlockingError, PathError};
 use actix_web::http::StatusCode;
-use actix_web::ResponseError;
+use actix_web::{HttpResponse, ResponseError};
 use bcrypt::BcryptError;
 use http_api_problem::ApiError;
 use lettre::transport::smtp;
 use std::fmt::Debug;
 use thiserror::Error;
-use utoipa::ToResponse;
 use validator::ValidationErrors;
 
 #[derive(Debug, Error)]
@@ -21,7 +20,7 @@ pub enum CalpolApiError {
     InternalServerError(&'static str, #[source] Box<dyn std::error::Error + Send>),
 }
 
-impl ToResponse for CalpolApiError {
+impl utoipa::ToResponse for CalpolApiError {
     fn response() -> (String, utoipa::openapi::Response) {
         let json = include_str!("../../resources/api_problem.yaml");
         (
@@ -39,13 +38,12 @@ impl ResponseError for CalpolApiError {
         }
     }
 
-    fn error_response(&self) -> actix_web::HttpResponse {
+    fn error_response(&self) -> HttpResponse {
         match &self {
             CalpolApiError::ApiError(a) => a.error_response(),
             CalpolApiError::InternalServerError(_, _) => {
-                ApiError::builder(StatusCode::INTERNAL_SERVER_ERROR)
-                    .finish()
-                    .into_actix_web_response()
+                // This will be overridden by 500 handler
+                HttpResponse::InternalServerError().finish()
             }
         }
     }
@@ -90,8 +88,6 @@ impl From<PathError> for CalpolApiError {
 /// These indicate some sort of programming error.
 #[derive(Debug, Error)]
 pub enum UnexpectedError {
-    #[error("Unable to deserialize test json from database: {0}")]
-    TestDeserialization(#[source] serde_json::Error),
     #[error("Missing auth data")]
     MissingAuthData,
     #[error("User has invalid email: {0}")]

@@ -1,4 +1,3 @@
-use crate::model::tests::TestConfig;
 use chrono::{DateTime, Utc};
 use lettre::Address;
 use serde::{Deserialize, Serialize};
@@ -101,10 +100,11 @@ pub struct SubmitPasswordResetRequest {
     pub new_password: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct CreateTestRequest {
     pub name: String,
-    pub config: TestConfig,
+    #[schema(value_type=Object)]
+    pub config: serde_json::Value,
     #[serde(default = "default_test_enabled")]
     pub enabled: bool,
     #[serde(default = "default_test_failure_threshold")]
@@ -120,21 +120,27 @@ fn default_test_enabled() -> bool {
     true
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct UpdateTestRequest {
-    #[validate]
-    pub config: Option<TestConfig>,
+    #[schema(value_type=Object)]
+    pub config: Option<serde_json::Value>,
     pub enabled: Option<bool>,
     pub failure_threshold: Option<u8>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct TestSummary {
     pub name: String,
-    pub config: TestConfig,
+    #[schema(value_type=Object)]
+    pub config: serde_json::Value,
     pub enabled: bool,
     pub failure_threshold: u8,
     pub failing: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct ListTestsResponse {
+    pub items: Vec<TestSummary>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
