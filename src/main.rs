@@ -44,6 +44,8 @@ enum SubCommand {
     Server,
     /// Create a new user account
     CreateUser(CreateUser),
+    /// Generate API specification
+    GenerateSpec,
 }
 
 #[derive(Parser)]
@@ -57,6 +59,11 @@ struct CreateUser {
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
     let opts: Opts = Opts::parse();
+    if matches!(opts.subcommand, SubCommand::GenerateSpec) {
+        print!("{}", api::openapi::api_yaml());
+        return Ok(());
+    }
+
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
     if cfg!(debug_assertions) {
         log::warn!("This is a debug build")
@@ -65,6 +72,8 @@ async fn main() -> anyhow::Result<()> {
 
     let manager = ConnectionManager::<PgConnection>::new(&settings.database_url);
     let pool = r2d2::Pool::builder().build(manager)?;
+    log::info!("Connected to database");
+
     embedded_migrations::run_with_output(&pool.get().unwrap(), &mut std::io::stdout())?;
 
     match opts.subcommand {
@@ -77,6 +86,7 @@ async fn main() -> anyhow::Result<()> {
                 App::new()
                     .app_data(Data::new(state.clone()))
                     .configure(|cfg| api::configure(cfg, &rl_backend))
+                    .configure(api::openapi::configure_swagger_ui)
                     .wrap(middleware::Logger::default())
             })
             .bind(&settings.api_socket)?
@@ -87,6 +97,7 @@ async fn main() -> anyhow::Result<()> {
             };
         }
         SubCommand::CreateUser(u) => create_user(pool.get().unwrap(), u)?,
+        SubCommand::GenerateSpec => unreachable!(),
     }
     Ok(())
 }

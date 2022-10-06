@@ -1,6 +1,7 @@
 mod auth;
-pub mod error;
-pub mod v1;
+mod error;
+pub mod openapi;
+mod v1;
 
 use crate::api::error::CalpolApiError;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
@@ -22,8 +23,7 @@ pub fn configure(app: &mut ServiceConfig, rate_limit_store: &InMemoryBackend) {
     app.service(
         api_scope("api")
             .app_data(
-                actix_web::web::PathConfig::default()
-                    .error_handler(|e, _| CalpolApiError::from(e).into()),
+                web::PathConfig::default().error_handler(|e, _| CalpolApiError::from(e).into()),
             )
             .app_data(
                 actix_web_validator::QueryConfig::default()

@@ -12,7 +12,7 @@ format:
 
 .PHONY: spec
 spec:
-	cargo run --bin calpol-spec
+	cargo run -- generate-spec > ./spec/api.yaml
 
 .PHONY: clients
 clients: spec

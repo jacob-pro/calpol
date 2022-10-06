@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Jacob Halsey <jacob@jhalsey.com>"]
 description = "Multi-Service health monitor"
-default-run = "calpol"
 
 [dependencies]
 actix-extensible-rate-limit = "0.2.1"
@@ -41,14 +40,6 @@ tokio-native-tls = "0.3.0"
 trust-dns-resolver = "0.20.3"
 url = { version = "2.2.2", features = ["serde"] }
 utoipa = { version = "2", features = ["actix_extras", "chrono"], git = "https://github.com/juhaku/utoipa" }
+utoipa-swagger-ui = { version = "2.0.1", features = ["actix-web"], git = "https://github.com/juhaku/utoipa" }
 validator = { version = "0.14.0", features = ["derive", "phone"] }
 x509-parser = "0.12.0"
-
-[[bin]]
-name = "calpol"
-path = "src/main.rs"
-
-[[bin]]
-name = "calpol-spec"
-path = "src/openapi.rs"
-
