@@ -62,6 +62,7 @@ where
         (status = 200, description = "Success"),
         (status = "default", response = CalpolApiError)
     ),
+    security(),
 )]
 async fn request(
     state: Data<AppState>,
@@ -96,6 +97,7 @@ async fn request(
         (status = 200, description = "Success"),
         (status = "default", response = CalpolApiError)
     ),
+    security(),
 )]
 async fn submit(
     state: Data<AppState>,
