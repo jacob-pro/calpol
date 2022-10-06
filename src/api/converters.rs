@@ -19,8 +19,8 @@ impl From<database::Session> for SessionSummary {
     fn from(session: database::Session) -> Self {
         Self {
             id: session.id,
-            created: session.created.timestamp(),
-            last_used: session.last_used.timestamp(),
+            created: session.created,
+            last_used: session.last_used,
             last_ip: bincode::deserialize::<IpAddr>(&session.last_ip)
                 .ok()
                 .map(|ip| ip.to_string())
@@ -50,8 +50,8 @@ pub fn test_and_result_to_summary(
         test_name: test.name.clone(),
         success: result.success,
         failure_reason: result.failure_reason,
-        time_started: result.time_started.to_string(),
-        time_finished: result.time_finished.to_string(),
+        time_started: result.time_started,
+        time_finished: result.time_finished,
     }
 }
 

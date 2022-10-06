@@ -40,20 +40,32 @@ pub fn configure(api: &mut ServiceConfig) {
     );
 }
 
+/// List users
+#[utoipa::path(
+    get,
+    path = "/api/users",
+    tag = "Users",
+    operation_id = "ListUsers",
+    request_body = ListUsersRequest,
+    responses(
+        (status = 200, description = "List of test results", body = ListUsersResponse),
+        (status = "default", response = CalpolApiError)
+    ),
+)]
 async fn list(
     _auth: Auth,
-    query: actix_web_validator::Query<ListUsersRequest>,
+    json: actix_web_validator::Json<ListUsersRequest>,
     state: Data<AppState>,
 ) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let user_repository = UserRepositoryImpl::new(&database);
-        let result = query
+        let result = json
             .search
             .as_ref()
-            .map(|search| user_repository.find_by_search(query.limit, query.offset, search))
+            .map(|search| user_repository.find_by_search(json.limit, json.offset, search))
             .unwrap_or_else(|| {
-                UserRepository::find_all(&user_repository, query.limit, query.offset)
+                UserRepository::find_all(&user_repository, json.limit, json.offset)
             })?;
         Ok(ListUsersResponse {
             items: result.results.into_iter().map(|x| x.into()).collect(),
@@ -64,6 +76,18 @@ async fn list(
     .map(JsonResponse::json_response)
 }
 
+/// Create a new user
+#[utoipa::path(
+    post,
+    path = "/api/users",
+    tag = "Users",
+    operation_id = "CreateUser",
+    request_body = CreateUserRequest,
+    responses(
+        (status = 200, description = "The created user", body = UserSummary),
+        (status = "default", response = CalpolApiError)
+    ),
+)]
 pub async fn create(
     _auth: Auth,
     json: actix_web_validator::Json<CreateUserRequest>,
@@ -110,6 +134,20 @@ where
     })
 }
 
+/// Get a user by id
+#[utoipa::path(
+    get,
+    path = "/api/users/{id}",
+    params(
+        ("id" = i32, Path, description = "User ID to get")
+    ),
+    tag = "Users",
+    operation_id = "GetUser",
+    responses(
+        (status = 200, description = "The user", body = UserSummary),
+        (status = "default", response = CalpolApiError)
+    ),
+)]
 async fn get(
     _auth: Auth,
     user_id: Path<i32>,
@@ -125,6 +163,21 @@ async fn get(
     .map(JsonResponse::json_response)
 }
 
+/// Update a user
+#[utoipa::path(
+    put,
+    path = "/api/users/{id}",
+    params(
+        ("id" = i32, Path, description = "User ID to update")
+    ),
+    tag = "Users",
+    operation_id = "UpdateUser",
+    request_body = UpdateUserRequest,
+    responses(
+        (status = 200, description = "The user", body = UserSummary),
+        (status = "default", response = CalpolApiError)
+    ),
+)]
 async fn update(
     _auth: Auth,
     user_id: Path<i32>,
@@ -133,13 +186,14 @@ async fn update(
 ) -> Result<HttpResponse, CalpolApiError> {
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
+        let json = json.into_inner();
         let user_repository = UserRepositoryImpl::new(&database);
         let mut user = retrieve_user(&user_repository, *user_id)?;
-        if let Some(email) = &json.email {
+        if let Some(email) = json.email {
             user.email = email.to_string().to_ascii_lowercase();
         }
-        if let Some(name) = &json.name {
-            user.name = name.clone();
+        if let Some(name) = json.name {
+            user.name = name;
         }
         if let Some(sms_notifications) = json.sms_notifications {
             user.sms_notifications = sms_notifications;
@@ -147,8 +201,8 @@ async fn update(
         if let Some(email_notifications) = json.email_notifications {
             user.email_notifications = email_notifications;
         }
-        if let Some(phone_number) = &json.phone_number {
-            user.phone_number = Some(phone_number.clone());
+        if let Some(phone_number) = json.phone_number {
+            user.phone_number = phone_number;
         }
         user_repository.update(&user).map_unique_violation(|_| {
             ApiError::builder(StatusCode::CONFLICT)
@@ -163,6 +217,20 @@ async fn update(
     .map(JsonResponse::json_response)
 }
 
+/// Delete a user
+#[utoipa::path(
+    delete,
+    path = "/api/users/{id}",
+    params(
+        ("id" = i32, Path, description = "User ID to delete")
+    ),
+    tag = "Users",
+    operation_id = "DeleteUser",
+    responses(
+        (status = 200, description = "Success"),
+        (status = "default", response = CalpolApiError)
+    ),
+)]
 async fn delete(
     _auth: Auth,
     user_id: Path<i32>,
@@ -183,6 +251,20 @@ async fn delete(
     .map(JsonResponse::json_response)
 }
 
+/// Send a test email to a user's email address
+#[utoipa::path(
+    post,
+    path = "/api/users/{id}/test_email",
+    params(
+        ("id" = i32, Path, description = "User ID to send email to")
+    ),
+    tag = "Users",
+    operation_id = "SendTestEmail",
+    responses(
+        (status = 200, description = "Success"),
+        (status = "default", response = CalpolApiError)
+    ),
+)]
 async fn test_email(
     _auth: Auth,
     user_id: Path<i32>,
@@ -207,6 +289,20 @@ async fn test_email(
     Ok(().json_response())
 }
 
+/// Send a test SMS message to a user's phone number
+#[utoipa::path(
+    post,
+    path = "/api/users/{id}/test_sms",
+    params(
+        ("id" = i32, Path, description = "User ID to send SMS message to")
+    ),
+    tag = "Users",
+    operation_id = "SendTestSms",
+    responses(
+        (status = 200, description = "Success"),
+        (status = "default", response = CalpolApiError)
+    ),
+)]
 async fn test_sms(
     _auth: Auth,
     user_id: Path<i32>,

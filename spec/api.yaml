@@ -226,6 +226,31 @@ paths:
     get:
       tags:
       - Tests
+      summary: Retrieve a test
+      description: |
+        Retrieve a test
+      operationId: GetTest
+      parameters:
+      - name: name
+        in: path
+        description: Test name to get
+        required: true
+        deprecated: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The created test
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestSummary'
+        default:
+          $ref: '#/components/responses/ApiError'
+      deprecated: false
+    put:
+      tags:
+      - Tests
       summary: Update a test
       description: |
         Update a test
@@ -254,6 +279,201 @@ paths:
         default:
           $ref: '#/components/responses/ApiError'
       deprecated: false
+    delete:
+      tags:
+      - Tests
+      summary: Delete a test
+      description: |
+        Delete a test
+      operationId: DeleteTest
+      parameters:
+      - name: name
+        in: path
+        description: Test name to delete
+        required: true
+        deprecated: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+        default:
+          $ref: '#/components/responses/ApiError'
+      deprecated: false
+  /api/users:
+    get:
+      tags:
+      - Users
+      summary: List users
+      description: |
+        List users
+      operationId: ListUsers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListUsersRequest'
+        required: true
+      responses:
+        '200':
+          description: List of test results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListUsersResponse'
+        default:
+          $ref: '#/components/responses/ApiError'
+      deprecated: false
+    post:
+      tags:
+      - Users
+      summary: Create a new user
+      description: |
+        Create a new user
+      operationId: CreateUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+        required: true
+      responses:
+        '200':
+          description: The created user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSummary'
+        default:
+          $ref: '#/components/responses/ApiError'
+      deprecated: false
+  /api/users/{id}:
+    get:
+      tags:
+      - Users
+      summary: Get a user by id
+      description: |
+        Get a user by id
+      operationId: GetUser
+      parameters:
+      - name: id
+        in: path
+        description: User ID to get
+        required: true
+        deprecated: false
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: The user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSummary'
+        default:
+          $ref: '#/components/responses/ApiError'
+      deprecated: false
+    put:
+      tags:
+      - Users
+      summary: Update a user
+      description: |
+        Update a user
+      operationId: UpdateUser
+      parameters:
+      - name: id
+        in: path
+        description: User ID to update
+        required: true
+        deprecated: false
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+        required: true
+      responses:
+        '200':
+          description: The user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSummary'
+        default:
+          $ref: '#/components/responses/ApiError'
+      deprecated: false
+    delete:
+      tags:
+      - Users
+      summary: Delete a user
+      description: |
+        Delete a user
+      operationId: DeleteUser
+      parameters:
+      - name: id
+        in: path
+        description: User ID to delete
+        required: true
+        deprecated: false
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Success
+        default:
+          $ref: '#/components/responses/ApiError'
+      deprecated: false
+  /api/users/{id}/test_email:
+    post:
+      tags:
+      - Users
+      summary: Send a test email to a user's email address
+      description: |
+        Send a test email to a user's email address
+      operationId: SendTestEmail
+      parameters:
+      - name: id
+        in: path
+        description: User ID to send email to
+        required: true
+        deprecated: false
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Success
+        default:
+          $ref: '#/components/responses/ApiError'
+      deprecated: false
+  /api/users/{id}/test_sms:
+    post:
+      tags:
+      - Users
+      summary: Send a test SMS message to a user's phone number
+      description: |
+        Send a test SMS message to a user's phone number
+      operationId: SendTestSms
+      parameters:
+      - name: id
+        in: path
+        description: User ID to send SMS message to
+        required: true
+        deprecated: false
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Success
+        default:
+          $ref: '#/components/responses/ApiError'
+      deprecated: false
 components:
   schemas:
     CreateTestRequest:
@@ -269,6 +489,16 @@ components:
         failure_threshold:
           type: integer
           format: int32
+        name:
+          type: string
+    CreateUserRequest:
+      type: object
+      required:
+      - name
+      - email
+      properties:
+        email:
+          type: string
         name:
           type: string
     ListRunnerLogsResponse:
@@ -311,6 +541,30 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TestSummary'
+    ListUsersRequest:
+      type: object
+      properties:
+        limit:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int32
+        search:
+          type: string
+    ListUsersResponse:
+      type: object
+      required:
+      - items
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSummary'
+        total:
+          type: integer
+          format: int64
     LoginRequest:
       type: object
       required:
@@ -379,16 +633,16 @@ components:
       - user_agent
       properties:
         created:
-          type: integer
-          format: int64
+          type: string
+          format: date-time
         id:
           type: integer
           format: int32
         last_ip:
           type: string
         last_used:
-          type: integer
-          format: int64
+          type: string
+          format: date-time
         user_agent:
           type: string
     SubmitPasswordResetRequest:
@@ -434,6 +688,21 @@ components:
         failure_threshold:
           type: integer
           format: int32
+    UpdateUserRequest:
+      type: object
+      required:
+      - email
+      properties:
+        email:
+          type: string
+        email_notifications:
+          type: boolean
+        name:
+          type: string
+        phone_number:
+          type: string
+        sms_notifications:
+          type: boolean
     UserSummary:
       type: object
       required:

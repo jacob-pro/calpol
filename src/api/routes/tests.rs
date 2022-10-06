@@ -145,7 +145,7 @@ async fn get(
 
 /// Update a test
 #[utoipa::path(
-    get,
+    put,
     path = "/api/tests/{name}",
     params(
         ("name" = String, Path, description = "Test name to update")

@@ -26,8 +26,8 @@ pub struct UserSummary {
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct SessionSummary {
     pub id: i32,
-    pub created: i64,
-    pub last_used: i64,
+    pub created: DateTime<Utc>,
+    pub last_used: DateTime<Utc>,
     pub last_ip: String,
     pub user_agent: String,
 }
@@ -44,7 +44,7 @@ pub struct LoginResponse {
     pub token: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 #[serde(default)]
 pub struct ListUsersRequest {
     #[validate(range(min = 1, max = 100))]
@@ -63,26 +63,28 @@ impl Default for ListUsersRequest {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ListUsersResponse {
     pub items: Vec<UserSummary>,
     pub total: i64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct CreateUserRequest {
     #[validate(length(min = 1, max = 255))]
     pub name: String,
+    #[schema(value_type=String)]
     pub email: Address,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct UpdateUserRequest {
     #[validate(length(min = 1, max = 255))]
     pub name: Option<String>,
+    #[schema(value_type=String)]
     pub email: Option<Address>,
     #[validate(phone)]
-    pub phone_number: Option<String>,
+    pub phone_number: Option<Option<String>>,
     pub sms_notifications: Option<bool>,
     pub email_notifications: Option<bool>,
 }
@@ -148,8 +150,8 @@ pub struct TestResultSummary {
     pub test_name: String,
     pub success: bool,
     pub failure_reason: Option<String>,
-    pub time_started: String,
-    pub time_finished: String,
+    pub time_started: DateTime<Utc>,
+    pub time_finished: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -184,11 +186,4 @@ pub struct RunnerLog {
     pub tests_passed: Option<i32>,
     pub tests_failed: Option<i32>,
     pub tests_skipped: Option<i32>,
-}
-
-#[derive(ToSchema, Debug, Clone, Serialize, Deserialize)]
-#[aliases(PaginatedResponseRunnerLog = PaginatedResponse<RunnerLog>)]
-pub struct PaginatedResponse<T> {
-    pub items: Vec<T>,
-    pub total: i64,
 }
