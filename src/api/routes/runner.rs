@@ -6,9 +6,9 @@ use actix_web::web::{Data, ServiceConfig};
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
 
-pub fn configure(v1: &mut ServiceConfig) {
+pub fn configure(api: &mut ServiceConfig) {
     let auth = HttpAuthentication::with_fn(authenticator);
-    v1.service(
+    api.service(
         api_scope("runner")
             .service(api_resource("queue").route(web::post().to(queue)))
             .wrap(auth),
@@ -18,7 +18,7 @@ pub fn configure(v1: &mut ServiceConfig) {
 /// Queue the test runner to immediately re-run.
 #[utoipa::path(
     post,
-    path = "/v1/runner/queue",
+    path = "/api/runner/queue",
     tag = "Runner",
     operation_id = "Queue",
     responses(

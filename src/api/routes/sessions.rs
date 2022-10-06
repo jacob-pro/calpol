@@ -1,10 +1,10 @@
 use crate::api::auth::{self, authenticator, Auth};
 use crate::api::error::CalpolApiError;
+use crate::api::models::{ListSessionsResponse, LoginRequest, LoginResponse, SessionSummary};
 use crate::api::{api_resource, api_scope, auth_rate_limiter, JsonResponse};
 use crate::database::{
     NewSession, SessionRepository, SessionRepositoryImpl, UserRepository, UserRepositoryImpl,
 };
-use crate::model::api_v1::{ListSessionsResponse, LoginRequest, LoginResponse, SessionSummary};
 use crate::state::AppState;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
 use actix_web::http::StatusCode;
@@ -16,9 +16,9 @@ use diesel_repository::CrudRepository;
 use http_api_problem::ApiError;
 use std::net::IpAddr;
 
-pub fn configure(v1: &mut ServiceConfig, rate_limit_backend: &InMemoryBackend) {
+pub fn configure(api: &mut ServiceConfig, rate_limit_backend: &InMemoryBackend) {
     let auth = HttpAuthentication::with_fn(authenticator);
-    v1.service(
+    api.service(
         api_scope("sessions")
             .service(
                 api_resource("login")
@@ -46,7 +46,7 @@ pub fn configure(v1: &mut ServiceConfig, rate_limit_backend: &InMemoryBackend) {
 /// Login with email and password
 #[utoipa::path(
     post,
-    path = "/v1/sessions/login",
+    path = "/api/sessions/login",
     tag = "Sessions",
     operation_id = "Login",
     request_body = LoginRequest,
@@ -121,7 +121,7 @@ pub async fn login(
 /// Logout (delete) session
 #[utoipa::path(
     delete,
-    path = "/v1/sessions/logout",
+    path = "/api/sessions/logout",
     tag = "Sessions",
     operation_id = "Logout",
     responses(
@@ -143,7 +143,7 @@ async fn logout(auth: Auth, state: Data<AppState>) -> Result<HttpResponse, Calpo
 /// List this users active sessions
 #[utoipa::path(
     get,
-    path = "/v1/sessions",
+    path = "/api/sessions",
     tag = "Sessions",
     operation_id = "ListSessions",
     responses(
@@ -169,7 +169,7 @@ async fn list(auth: Auth, state: Data<AppState>) -> Result<HttpResponse, CalpolA
 /// Delete a session by id
 #[utoipa::path(
     delete,
-    path = "/v1/sessions/{id}",
+    path = "/api/sessions/{id}",
     params(
         ("id" = i32, Path, description = "Session id to delete")
     ),

@@ -1,19 +1,19 @@
 use crate::api::auth::authenticator;
+use crate::api::converters;
 use crate::api::error::CalpolApiError;
-use crate::api::v1::converters;
-use crate::api::v1::tests::retrieve_test;
+use crate::api::models::{GetTestResultsRequest, ListTestResultsResponse};
+use crate::api::routes::tests::retrieve_test;
 use crate::api::{api_resource, api_scope, JsonResponse};
 use crate::database::{TestRepositoryImpl, TestResultRepository, TestResultRepositoryImpl};
-use crate::model::api_v1::{GetTestResultsRequest, ListTestResultsResponse};
 use crate::state::AppState;
 use actix_web::web::{Data, Path, ServiceConfig};
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use diesel_repository::CrudRepository;
 
-pub fn configure(v1: &mut ServiceConfig) {
+pub fn configure(api: &mut ServiceConfig) {
     let auth = HttpAuthentication::with_fn(authenticator);
-    v1.service(
+    api.service(
         api_scope("test_results")
             .service(api_resource("").route(web::get().to(list)))
             .service(api_resource("{test_name}").route(web::get().to(get)))
@@ -24,7 +24,7 @@ pub fn configure(v1: &mut ServiceConfig) {
 /// List test results
 #[utoipa::path(
     get,
-    path = "/v1/test_results",
+    path = "/api/test_results",
     tag = "TestResults",
     operation_id = "ListTestResults",
     responses(

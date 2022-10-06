@@ -1,11 +1,11 @@
 use crate::api::auth::authenticator;
 use crate::api::error::{CalpolApiError, MapDieselUniqueViolation};
+use crate::api::models::{CreateTestRequest, ListTestsResponse, TestSummary, UpdateTestRequest};
 use crate::api::{api_resource, api_scope, JsonResponse};
 use crate::database::{
     NewTest, Test, TestRepository, TestRepositoryImpl, TestResultRepository,
     TestResultRepositoryImpl,
 };
-use crate::model::api_v1::{CreateTestRequest, ListTestsResponse, TestSummary, UpdateTestRequest};
 use crate::model::tests::TestConfig;
 use crate::state::AppState;
 use actix_web::http::StatusCode;
@@ -17,9 +17,9 @@ use diesel_repository::CrudRepository;
 use http_api_problem::ApiError;
 use validator::Validate;
 
-pub fn configure(v1: &mut ServiceConfig) {
+pub fn configure(api: &mut ServiceConfig) {
     let auth = HttpAuthentication::with_fn(authenticator);
-    v1.service(
+    api.service(
         api_scope("tests")
             .service(
                 api_resource("")
@@ -39,7 +39,7 @@ pub fn configure(v1: &mut ServiceConfig) {
 /// List tests
 #[utoipa::path(
     get,
-    path = "/v1/tests",
+    path = "/api/tests",
     tag = "Tests",
     operation_id = "ListTests",
     responses(
@@ -65,7 +65,7 @@ async fn list(state: Data<AppState>) -> Result<HttpResponse, CalpolApiError> {
 /// Create a new test
 #[utoipa::path(
     post,
-    path = "/v1/tests",
+    path = "/api/tests",
     tag = "Tests",
     operation_id = "CreateTest",
     request_body = CreateTestRequest,
@@ -118,7 +118,7 @@ where
 /// Retrieve a test
 #[utoipa::path(
     get,
-    path = "/v1/tests/{name}",
+    path = "/api/tests/{name}",
     params(
         ("name" = String, Path, description = "Test name to get")
     ),
@@ -146,7 +146,7 @@ async fn get(
 /// Update a test
 #[utoipa::path(
     get,
-    path = "/v1/tests/{name}",
+    path = "/api/tests/{name}",
     params(
         ("name" = String, Path, description = "Test name to update")
     ),
@@ -188,7 +188,7 @@ async fn update(
 /// Delete a test
 #[utoipa::path(
     delete,
-    path = "/v1/tests/{name}",
+    path = "/api/tests/{name}",
     params(
         ("name" = String, Path, description = "Test name to delete")
     ),

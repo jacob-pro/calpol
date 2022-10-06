@@ -1,7 +1,7 @@
 use crate::api::error::{CalpolApiError, UnexpectedError};
+use crate::api::models::{PasswordResetRequest, SubmitPasswordResetRequest};
 use crate::api::{api_resource, api_scope, auth, auth_rate_limiter, JsonResponse};
 use crate::database::{User, UserRepository, UserRepositoryImpl};
-use crate::model::api_v1::{PasswordResetRequest, SubmitPasswordResetRequest};
 use crate::settings::Settings;
 use crate::state::AppState;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
@@ -15,8 +15,8 @@ use lettre::Message;
 
 const TOKEN_EXPIRY_HOURS: i64 = 12;
 
-pub fn configure(v1: &mut ServiceConfig, rl_backend: &InMemoryBackend) {
-    v1.service(
+pub fn configure(api: &mut ServiceConfig, rl_backend: &InMemoryBackend) {
+    api.service(
         api_scope("password_reset")
             .service(api_resource("").route(web::post().to(request)))
             .service(api_resource("submit").route(web::post().to(submit)))
@@ -54,7 +54,7 @@ where
 /// Request a password reset token
 #[utoipa::path(
     post,
-    path = "/v1/password_reset/",
+    path = "/api/password_reset/",
     tag = "PasswordReset",
     operation_id = "Request",
     request_body = PasswordResetRequest,
@@ -89,7 +89,7 @@ async fn request(
 /// Submit a password reset token
 #[utoipa::path(
     post,
-    path = "/v1/password_reset/submit",
+    path = "/api/password_reset/submit",
     tag = "PasswordReset",
     operation_id = "Submit",
     request_body = SubmitPasswordResetRequest,

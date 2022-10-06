@@ -1,12 +1,12 @@
 use crate::api::auth::{authenticator, Auth};
 use crate::api::error::{CalpolApiError, MapDieselUniqueViolation, UnexpectedError};
-use crate::api::v1::password_reset::send_reset_email;
+use crate::api::models::{
+    CreateUserRequest, ListUsersRequest, ListUsersResponse, UpdateUserRequest, UserSummary,
+};
+use crate::api::routes::password_reset::send_reset_email;
 use crate::api::{api_resource, api_scope, auth, JsonResponse};
 use crate::database::{
     NewUser, SessionRepository, SessionRepositoryImpl, User, UserRepository, UserRepositoryImpl,
-};
-use crate::model::api_v1::{
-    CreateUserRequest, ListUsersRequest, ListUsersResponse, UpdateUserRequest, UserSummary,
 };
 use crate::state::AppState;
 use actix_web::http::StatusCode;
@@ -19,9 +19,9 @@ use diesel_repository::CrudRepository;
 use http_api_problem::ApiError;
 use lettre::{AsyncTransport, Message};
 
-pub fn configure(v1: &mut ServiceConfig) {
+pub fn configure(api: &mut ServiceConfig) {
     let auth = HttpAuthentication::with_fn(authenticator);
-    v1.service(
+    api.service(
         api_scope("users")
             .service(
                 api_resource("")

@@ -1,5 +1,5 @@
+use crate::api::models::*;
 use crate::database;
-use crate::model::api_v1::*;
 use std::net::IpAddr;
 
 impl From<database::User> for UserSummary {
@@ -43,8 +43,8 @@ impl From<database::Test> for TestSummary {
 }
 
 pub fn test_and_result_to_summary(
-    test: &crate::database::Test,
-    result: crate::database::TestResult,
+    test: &database::Test,
+    result: database::TestResult,
 ) -> TestResultSummary {
     TestResultSummary {
         test_name: test.name.clone(),

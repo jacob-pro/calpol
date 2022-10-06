@@ -14,12 +14,12 @@ mod state;
 mod test_runner;
 
 use crate::database::{Connection, NewUser, UserRepositoryImpl};
-use crate::model::api_v1::UserSummary;
 use crate::settings::Settings;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
 use actix_web::web::Data;
 use actix_web::{middleware, App, HttpServer};
 use anyhow::Context;
+use api::models::UserSummary;
 use clap::{Parser, Subcommand};
 use diesel::r2d2::ConnectionManager;
 use diesel::{r2d2, PgConnection};

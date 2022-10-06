@@ -1,7 +1,9 @@
 mod auth;
+mod converters;
 mod error;
+pub mod models;
 pub mod openapi;
-mod v1;
+mod routes;
 
 use crate::api::error::CalpolApiError;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
@@ -19,7 +21,7 @@ use serde::Serialize;
 use std::borrow::Cow;
 use std::time::Duration;
 
-pub fn configure(app: &mut ServiceConfig, rate_limit_store: &InMemoryBackend) {
+pub fn configure(app: &mut ServiceConfig, rate_limit_backend: &InMemoryBackend) {
     app.service(
         api_scope("api")
             .app_data(
@@ -33,7 +35,13 @@ pub fn configure(app: &mut ServiceConfig, rate_limit_store: &InMemoryBackend) {
                 actix_web_validator::JsonConfig::default()
                     .error_handler(|e, _| CalpolApiError::from(e).into()),
             )
-            .configure(|api| v1::configure(api, rate_limit_store))
+            .configure(|api| routes::sessions::configure(api, rate_limit_backend))
+            .configure(routes::users::configure)
+            .configure(|api| routes::password_reset::configure(api, rate_limit_backend))
+            .configure(routes::tests::configure)
+            .configure(routes::test_results::configure)
+            .configure(routes::runner_logs::configure)
+            .configure(routes::runner::configure)
             .service(api_resource("").route(web::get().to(|| async { "Calpol API".to_string() })))
             .wrap(ErrorHandlers::new().handler(StatusCode::INTERNAL_SERVER_ERROR, handle_500)),
     );
