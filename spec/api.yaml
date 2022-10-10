@@ -499,6 +499,7 @@ components:
       properties:
         email:
           type: string
+          format: email
         name:
           type: string
     ListRunnerLogsResponse:
@@ -695,6 +696,7 @@ components:
       properties:
         email:
           type: string
+          format: email
         email_notifications:
           type: boolean
         name:
@@ -742,6 +744,7 @@ components:
                 example: Connection to database timed out
               instance:
                 type: string
+                format: uri
                 description: |-
                   An absolute URI that identifies the specific occurrence of the problem.
                   It may or may not yield further information if dereferenced.
@@ -760,6 +763,7 @@ components:
                   not localized); example: Service Unavailable
               type:
                 type: string
+                format: uri
                 description: |
                   An absolute URI that identifies the problem type.  When dereferenced,
                   it SHOULD provide human-readable documentation for the problem type

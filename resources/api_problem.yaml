@@ -8,7 +8,7 @@ content:
       properties:
         type:
           type: string
-          # format: uri
+          format: uri
           description: |
             An absolute URI that identifies the problem type.  When dereferenced,
             it SHOULD provide human-readable documentation for the problem type
@@ -37,7 +37,7 @@ content:
           example: Connection to database timed out
         instance:
           type: string
-          # format: uri
+          format: uri
           description: |
             An absolute URI that identifies the specific occurrence of the problem.
             It may or may not yield further information if dereferenced.

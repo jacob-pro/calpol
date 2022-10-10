@@ -73,7 +73,7 @@ pub struct ListUsersResponse {
 pub struct CreateUserRequest {
     #[validate(length(min = 1, max = 255))]
     pub name: String,
-    #[schema(value_type=String)]
+    #[schema(value_type = String, format = "email")]
     pub email: Address,
 }
 
@@ -81,7 +81,7 @@ pub struct CreateUserRequest {
 pub struct UpdateUserRequest {
     #[validate(length(min = 1, max = 255))]
     pub name: Option<String>,
-    #[schema(value_type=String)]
+    #[schema(value_type = String, format = "email")]
     pub email: Option<Address>,
     #[validate(phone)]
     pub phone_number: Option<Option<String>>,
