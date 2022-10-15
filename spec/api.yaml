@@ -657,6 +657,26 @@ components:
           format: password
         token:
           type: string
+    TestResultSummary:
+      type: object
+      required:
+      - test_name
+      - success
+      - time_started
+      - time_finished
+      properties:
+        failure_reason:
+          type: string
+        success:
+          type: boolean
+        test_name:
+          type: string
+        time_finished:
+          type: string
+          format: date-time
+        time_started:
+          type: string
+          format: date-time
     TestSummary:
       type: object
       required:
@@ -703,6 +723,7 @@ components:
           type: string
         phone_number:
           type: string
+          nullable: true
         sms_notifications:
           type: boolean
     UserSummary:

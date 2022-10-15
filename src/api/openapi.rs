@@ -30,6 +30,7 @@ impl Modify for SecurityAddon {
             crate::api::models::SessionSummary,
             crate::api::models::ListSessionsResponse,
             crate::api::models::ListTestResultsResponse,
+            crate::api::models::TestResultSummary,
             crate::api::models::ListTestsResponse,
             crate::api::models::CreateTestRequest,
             crate::api::models::TestSummary,

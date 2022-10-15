@@ -84,6 +84,7 @@ pub struct UpdateUserRequest {
     #[schema(value_type = String, format = "email")]
     pub email: Option<Address>,
     #[validate(phone)]
+    #[schema(nullable)]
     pub phone_number: Option<Option<String>>,
     pub sms_notifications: Option<bool>,
     pub email_notifications: Option<bool>,
@@ -145,7 +146,7 @@ pub struct ListTestsResponse {
     pub items: Vec<TestSummary>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct TestResultSummary {
     pub test_name: String,
     pub success: bool,
