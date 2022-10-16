@@ -1,9 +1,9 @@
 use crate::api::auth::authenticator;
 use crate::api::error::{CalpolApiError, MapDieselUniqueViolation};
-use crate::api::models::{CreateTestRequest, ListTestsResponse, TestSummary, UpdateTestRequest};
+use crate::api::models::{CreateTestRequest, ListTestsResponse, Test, UpdateTestRequest};
 use crate::api::{api_resource, api_scope, JsonResponse};
 use crate::database::{
-    NewTest, Test, TestRepository, TestRepositoryImpl, TestResultRepository,
+    self, NewTest, TestRepository, TestRepositoryImpl, TestResultRepository,
     TestResultRepositoryImpl,
 };
 use crate::model::tests::TestConfig;
@@ -54,7 +54,7 @@ async fn list(state: Data<AppState>) -> Result<HttpResponse, CalpolApiError> {
         let tests = test_repository
             .find_all()?
             .into_iter()
-            .map(TestSummary::from)
+            .map(Test::from)
             .collect::<Vec<_>>();
         Ok(ListTestsResponse { items: tests })
     })
@@ -97,13 +97,16 @@ async fn create(
                     .finish()
                     .into()
             })?;
-        Ok(TestSummary::from(test))
+        Ok(Test::from(test))
     })
     .await?
     .map(JsonResponse::json_response)
 }
 
-pub fn retrieve_test<'t, T>(test_repository: &T, test_name: &str) -> Result<Test, CalpolApiError>
+pub fn retrieve_test<'t, T>(
+    test_repository: &T,
+    test_name: &str,
+) -> Result<database::Test, CalpolApiError>
 where
     T: TestRepository + 't,
 {
@@ -137,7 +140,7 @@ async fn get(
         let database = state.database();
         let test_repository = TestRepositoryImpl::new(&database);
         let test = retrieve_test(&test_repository, test_name.as_ref())?;
-        Ok(TestSummary::from(test))
+        Ok(Test::from(test))
     })
     .await?
     .map(JsonResponse::json_response)
@@ -179,7 +182,7 @@ async fn update(
             test.failure_threshold = failure_threshold as i32;
         }
         test_repository.update(&test)?;
-        Ok(TestSummary::from(test))
+        Ok(Test::from(test))
     })
     .await?
     .map(JsonResponse::json_response)

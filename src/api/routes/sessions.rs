@@ -1,6 +1,6 @@
 use crate::api::auth::{self, authenticator, Auth};
 use crate::api::error::CalpolApiError;
-use crate::api::models::{ListSessionsResponse, LoginRequest, LoginResponse, SessionSummary};
+use crate::api::models::{ListSessionsResponse, LoginRequest, LoginResponse, Session};
 use crate::api::{api_resource, api_scope, auth_rate_limiter, JsonResponse};
 use crate::database::{
     NewSession, SessionRepository, SessionRepositoryImpl, UserRepository, UserRepositoryImpl,
@@ -155,7 +155,7 @@ async fn list(auth: Auth, state: Data<AppState>) -> Result<HttpResponse, CalpolA
     web::block(move || -> Result<_, CalpolApiError> {
         let database = state.database();
         let session_repository = SessionRepositoryImpl::new(&database);
-        let sessions: Vec<SessionSummary> = session_repository
+        let sessions: Vec<Session> = session_repository
             .find_all_belonging_to_user(&auth.user)?
             .into_iter()
             .map(|s| s.into())

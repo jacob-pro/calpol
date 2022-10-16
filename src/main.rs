@@ -19,7 +19,7 @@ use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
 use actix_web::web::Data;
 use actix_web::{middleware, App, HttpServer};
 use anyhow::Context;
-use api::models::UserSummary;
+use api::models::User;
 use clap::{Parser, Subcommand};
 use diesel::r2d2::ConnectionManager;
 use diesel::{r2d2, PgConnection};
@@ -115,10 +115,5 @@ fn create_user(connection: Connection, user: CreateUser) -> anyhow::Result<()> {
             password_reset_token_creation: None,
         })
         .map_err(|e| e.into())
-        .map(|u| {
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&UserSummary::from(u)).unwrap()
-            )
-        })
+        .map(|u| println!("{}", serde_json::to_string_pretty(&User::from(u)).unwrap()))
 }

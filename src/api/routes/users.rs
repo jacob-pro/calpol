@@ -1,12 +1,12 @@
 use crate::api::auth::{authenticator, Auth};
 use crate::api::error::{CalpolApiError, MapDieselUniqueViolation, UnexpectedError};
 use crate::api::models::{
-    CreateUserRequest, ListUsersRequest, ListUsersResponse, UpdateUserRequest, UserSummary,
+    CreateUserRequest, ListUsersRequest, ListUsersResponse, UpdateUserRequest, User,
 };
 use crate::api::routes::password_reset::send_reset_email;
 use crate::api::{api_resource, api_scope, auth, JsonResponse};
 use crate::database::{
-    NewUser, SessionRepository, SessionRepositoryImpl, User, UserRepository, UserRepositoryImpl,
+    self, NewUser, SessionRepository, SessionRepositoryImpl, UserRepository, UserRepositoryImpl,
 };
 use crate::state::AppState;
 use actix_web::http::StatusCode;
@@ -119,10 +119,10 @@ pub async fn create(
     if let Err(e) = send_reset_email(&state.mailer, &user, &state.settings).await {
         log::error!("Unable to send reset email on account creation: {}", e)
     }
-    Ok(UserSummary::from(user).json_response())
+    Ok(User::from(user).json_response())
 }
 
-fn retrieve_user<'u, U>(user_repository: &U, user_id: i32) -> Result<User, CalpolApiError>
+fn retrieve_user<'u, U>(user_repository: &U, user_id: i32) -> Result<database::User, CalpolApiError>
 where
     U: UserRepository + 'u,
 {
@@ -157,7 +157,7 @@ async fn get(
         let database = state.database();
         let user_repository = UserRepositoryImpl::new(&database);
         let user = retrieve_user(&user_repository, *user_id)?;
-        Ok(UserSummary::from(user))
+        Ok(User::from(user))
     })
     .await?
     .map(JsonResponse::json_response)
@@ -211,7 +211,7 @@ async fn update(
                 .finish()
                 .into()
         })?;
-        Ok(UserSummary::from(user))
+        Ok(User::from(user))
     })
     .await?
     .map(JsonResponse::json_response)

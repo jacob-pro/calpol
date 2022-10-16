@@ -14,7 +14,7 @@ pub struct LoginRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct UserSummary {
+pub struct User {
     pub id: i32,
     pub name: String,
     pub email: String,
@@ -24,7 +24,7 @@ pub struct UserSummary {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct SessionSummary {
+pub struct Session {
     pub id: i32,
     pub created: DateTime<Utc>,
     pub last_used: DateTime<Utc>,
@@ -34,13 +34,13 @@ pub struct SessionSummary {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ListSessionsResponse {
-    pub items: Vec<SessionSummary>,
+    pub items: Vec<Session>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct LoginResponse {
-    pub user: UserSummary,
-    pub session: SessionSummary,
+    pub user: User,
+    pub session: Session,
     pub token: String,
 }
 
@@ -65,7 +65,7 @@ impl Default for ListUsersRequest {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ListUsersResponse {
-    pub items: Vec<UserSummary>,
+    pub items: Vec<User>,
     pub total: i64,
 }
 
@@ -132,7 +132,7 @@ pub struct UpdateTestRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct TestSummary {
+pub struct Test {
     pub name: String,
     #[schema(value_type=Object)]
     pub config: serde_json::Value,
@@ -143,11 +143,11 @@ pub struct TestSummary {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ListTestsResponse {
-    pub items: Vec<TestSummary>,
+    pub items: Vec<Test>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct TestResultSummary {
+pub struct TestResult {
     pub test_name: String,
     pub success: bool,
     pub failure_reason: Option<String>,
@@ -157,7 +157,7 @@ pub struct TestResultSummary {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ListTestResultsResponse {
-    pub items: Vec<TestResultSummary>,
+    pub items: Vec<TestResult>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]

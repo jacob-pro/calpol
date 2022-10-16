@@ -2,7 +2,7 @@ use crate::api::models::*;
 use crate::database;
 use std::net::IpAddr;
 
-impl From<database::User> for UserSummary {
+impl From<database::User> for User {
     fn from(user: database::User) -> Self {
         Self {
             id: user.id,
@@ -15,7 +15,7 @@ impl From<database::User> for UserSummary {
     }
 }
 
-impl From<database::Session> for SessionSummary {
+impl From<database::Session> for Session {
     fn from(session: database::Session) -> Self {
         Self {
             id: session.id,
@@ -30,7 +30,7 @@ impl From<database::Session> for SessionSummary {
     }
 }
 
-impl From<database::Test> for TestSummary {
+impl From<database::Test> for Test {
     fn from(test: database::Test) -> Self {
         Self {
             name: test.name,
@@ -45,8 +45,8 @@ impl From<database::Test> for TestSummary {
 pub fn test_and_result_to_summary(
     test: &database::Test,
     result: database::TestResult,
-) -> TestResultSummary {
-    TestResultSummary {
+) -> TestResult {
+    TestResult {
         test_name: test.name.clone(),
         success: result.success,
         failure_reason: result.failure_reason,
