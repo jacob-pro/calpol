@@ -1,6 +1,5 @@
 #[macro_use]
 extern crate diesel_migrations;
-embed_migrations!();
 #[macro_use]
 extern crate diesel;
 
@@ -27,6 +26,7 @@ use diesel_repository::CrudRepository;
 use env_logger::Env;
 use state::AppState;
 use std::sync::Arc;
+use migration::{Migrator, MigratorTrait};
 
 #[derive(Parser)]
 #[clap(about, version, author)]
@@ -70,11 +70,16 @@ async fn main() -> anyhow::Result<()> {
     };
     let settings = Arc::new(Settings::new(opts.config.as_ref())?);
 
+    let connection = sea_orm::Database::connect(&settings.database_url).await?;
+    log::info!("Connected to database, running migrations...");
+    Migrator::up(&connection, None).await?;
+    panic!("stop");
+
     let manager = ConnectionManager::<PgConnection>::new(&settings.database_url);
     let pool = r2d2::Pool::builder().build(manager)?;
     log::info!("Connected to database");
 
-    embedded_migrations::run_with_output(&pool.get().unwrap(), &mut std::io::stdout())?;
+    // embedded_migrations::run_with_output(&pool.get().unwrap(), &mut std::io::stdout())?;
 
     match opts.subcommand {
         SubCommand::Server => {
