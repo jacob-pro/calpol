@@ -2,8 +2,8 @@
 
 pub mod prelude;
 
-pub mod runner_logs;
-pub mod sessions;
-pub mod test_results;
-pub mod tests;
-pub mod users;
+pub mod runner_log;
+pub mod session;
+pub mod test;
+pub mod test_result;
+pub mod user;

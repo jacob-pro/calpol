@@ -10,32 +10,32 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Users::Table)
+                    .table(User::Table)
                     .if_not_exists()
-                    .col(&mut bigint_primary_key(Users::Id))
-                    .col(ColumnDef::new(Users::Name).string().not_null())
+                    .col(&mut bigint_primary_key(User::Id))
+                    .col(ColumnDef::new(User::Name).string().not_null())
                     .col(
-                        ColumnDef::new(Users::Email)
+                        ColumnDef::new(User::Email)
                             .string()
                             .not_null()
                             .unique_key(),
                     )
-                    .col(ColumnDef::new(Users::PasswordHash).string().null())
+                    .col(ColumnDef::new(User::PasswordHash).string().null())
                     .col(
-                        ColumnDef::new(Users::PasswordResetToken)
+                        ColumnDef::new(User::PasswordResetToken)
                             .string()
                             .null()
                             .unique_key(),
                     )
                     .col(
-                        ColumnDef::new(Users::PasswordResetTokenCreation)
+                        ColumnDef::new(User::PasswordResetTokenCreation)
                             .date_time()
                             .null(),
                     )
-                    .col(ColumnDef::new(Users::PhoneNumber).string().null())
-                    .col(ColumnDef::new(Users::SmsNotifications).boolean().not_null())
+                    .col(ColumnDef::new(User::PhoneNumber).string().null())
+                    .col(ColumnDef::new(User::SmsNotifications).boolean().not_null())
                     .col(
-                        ColumnDef::new(Users::EmailNotifications)
+                        ColumnDef::new(User::EmailNotifications)
                             .boolean()
                             .not_null(),
                     )
@@ -46,28 +46,28 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Sessions::Table)
+                    .table(Session::Table)
                     .if_not_exists()
-                    .col(&mut bigint_primary_key(Sessions::Id))
-                    .col(ColumnDef::new(Sessions::UserId).big_integer().not_null())
+                    .col(&mut bigint_primary_key(Session::Id))
+                    .col(ColumnDef::new(Session::UserId).big_integer().not_null())
                     .col(
-                        ColumnDef::new(Sessions::Token)
+                        ColumnDef::new(Session::Token)
                             .string()
                             .not_null()
                             .unique_key(),
                     )
-                    .col(ColumnDef::new(Sessions::Created).timestamp_with_time_zone().not_null())
-                    .col(ColumnDef::new(Sessions::LastUsed).timestamp_with_time_zone().not_null())
-                    .col(ColumnDef::new(Sessions::LastIp).string().not_null())
+                    .col(ColumnDef::new(Session::Created).timestamp_with_time_zone().not_null())
+                    .col(ColumnDef::new(Session::LastUsed).timestamp_with_time_zone().not_null())
+                    .col(ColumnDef::new(Session::LastIp).string().not_null())
                     .col(
-                        ColumnDef::new(Sessions::UserAgent)
+                        ColumnDef::new(Session::UserAgent)
                             .string_len(512)
                             .not_null(),
                     )
                     .foreign_key(
                         &mut ForeignKeyCreateStatement::new()
-                            .from(Sessions::Table, Sessions::UserId)
-                            .to(Users::Table, Users::Id)
+                            .from(Session::Table, Session::UserId)
+                            .to(User::Table, User::Id)
                             .to_owned(),
                     )
                     .to_owned(),
@@ -77,14 +77,14 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Tests::Table)
+                    .table(Test::Table)
                     .if_not_exists()
-                    .col(&mut bigint_primary_key(Tests::Id))
-                    .col(ColumnDef::new(Tests::Enabled).boolean().not_null())
-                    .col(ColumnDef::new(Tests::Config).json_binary().not_null())
-                    .col(ColumnDef::new(Tests::Failing).boolean().not_null())
+                    .col(&mut bigint_primary_key(Test::Id))
+                    .col(ColumnDef::new(Test::Enabled).boolean().not_null())
+                    .col(ColumnDef::new(Test::Config).json_binary().not_null())
+                    .col(ColumnDef::new(Test::Failing).boolean().not_null())
                     .col(
-                        ColumnDef::new(Tests::FailureThreshold)
+                        ColumnDef::new(Test::FailureThreshold)
                             .small_unsigned()
                             .not_null(),
                     )
@@ -95,25 +95,25 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(TestResults::Table)
+                    .table(TestResult::Table)
                     .if_not_exists()
-                    .col(&mut bigint_primary_key(TestResults::Id))
-                    .col(ColumnDef::new(TestResults::TestId).big_integer().not_null())
-                    .col(ColumnDef::new(TestResults::Failure).string().null())
+                    .col(&mut bigint_primary_key(TestResult::Id))
+                    .col(ColumnDef::new(TestResult::TestId).big_integer().not_null())
+                    .col(ColumnDef::new(TestResult::Failure).string().null())
                     .col(
-                        ColumnDef::new(TestResults::TimeStarted)
+                        ColumnDef::new(TestResult::TimeStarted)
                             .timestamp_with_time_zone()
                             .not_null(),
                     )
                     .col(
-                        ColumnDef::new(TestResults::TimeFinished)
+                        ColumnDef::new(TestResult::TimeFinished)
                             .timestamp_with_time_zone()
                             .not_null(),
                     )
                     .foreign_key(
                         &mut ForeignKeyCreateStatement::new()
-                            .from(TestResults::Table, TestResults::TestId)
-                            .to(Tests::Table, Tests::Id)
+                            .from(TestResult::Table, TestResult::TestId)
+                            .to(Test::Table, Test::Id)
                             .to_owned(),
                     )
                     .to_owned(),
@@ -123,23 +123,23 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(RunnerLogs::Table)
+                    .table(RunnerLog::Table)
                     .if_not_exists()
-                    .col(&mut bigint_primary_key(RunnerLogs::Id))
+                    .col(&mut bigint_primary_key(RunnerLog::Id))
                     .col(
-                        ColumnDef::new(RunnerLogs::TimeStarted)
+                        ColumnDef::new(RunnerLog::TimeStarted)
                             .timestamp_with_time_zone()
                             .not_null(),
                     )
                     .col(
-                        ColumnDef::new(RunnerLogs::TimeFinished)
+                        ColumnDef::new(RunnerLog::TimeFinished)
                             .timestamp_with_time_zone()
                             .not_null(),
                     )
-                    .col(ColumnDef::new(RunnerLogs::Failure).string().null())
-                    .col(ColumnDef::new(RunnerLogs::TestsPassed).unsigned().null())
-                    .col(ColumnDef::new(RunnerLogs::TestsFailed).unsigned().null())
-                    .col(ColumnDef::new(RunnerLogs::TestsSkipped).unsigned().null())
+                    .col(ColumnDef::new(RunnerLog::Failure).string().null())
+                    .col(ColumnDef::new(RunnerLog::TestsPassed).unsigned().null())
+                    .col(ColumnDef::new(RunnerLog::TestsFailed).unsigned().null())
+                    .col(ColumnDef::new(RunnerLog::TestsSkipped).unsigned().null())
                     .to_owned(),
             )
             .await?;
@@ -149,19 +149,19 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(RunnerLogs::Table).to_owned())
+            .drop_table(Table::drop().table(RunnerLog::Table).to_owned())
             .await?;
         manager
-            .drop_table(Table::drop().table(TestResults::Table).to_owned())
+            .drop_table(Table::drop().table(TestResult::Table).to_owned())
             .await?;
         manager
-            .drop_table(Table::drop().table(Tests::Table).to_owned())
+            .drop_table(Table::drop().table(Test::Table).to_owned())
             .await?;
         manager
-            .drop_table(Table::drop().table(Sessions::Table).to_owned())
+            .drop_table(Table::drop().table(Session::Table).to_owned())
             .await?;
         manager
-            .drop_table(Table::drop().table(Users::Table).to_owned())
+            .drop_table(Table::drop().table(User::Table).to_owned())
             .await?;
         Ok(())
     }
@@ -169,7 +169,7 @@ impl MigrationTrait for Migration {
 
 /// Learn more at https://docs.rs/sea-query#iden
 #[derive(Iden)]
-enum Users {
+enum User {
     Table,
     Id,
     Name,
@@ -183,7 +183,7 @@ enum Users {
 }
 
 #[derive(Iden)]
-enum Sessions {
+enum Session {
     Table,
     Id,
     UserId,
@@ -195,7 +195,7 @@ enum Sessions {
 }
 
 #[derive(Iden)]
-enum Tests {
+enum Test {
     Table,
     Id,
     Enabled,
@@ -205,7 +205,7 @@ enum Tests {
 }
 
 #[derive(Iden)]
-enum TestResults {
+enum TestResult {
     Table,
     Id,
     TestId,
@@ -215,7 +215,7 @@ enum TestResults {
 }
 
 #[derive(Iden)]
-enum RunnerLogs {
+enum RunnerLog {
     Table,
     Id,
     TimeStarted,

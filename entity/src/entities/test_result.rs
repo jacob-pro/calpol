@@ -3,34 +3,31 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
-#[sea_orm(table_name = "sessions")]
+#[sea_orm(table_name = "test_result")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
-    pub user_id: i64,
-    #[sea_orm(unique)]
-    pub token: String,
-    pub created: DateTimeWithTimeZone,
-    pub last_used: DateTimeWithTimeZone,
-    pub last_ip: String,
-    pub user_agent: String,
+    pub test_id: i64,
+    pub failure: Option<String>,
+    pub time_started: DateTimeWithTimeZone,
+    pub time_finished: DateTimeWithTimeZone,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::users::Entity",
-        from = "Column::UserId",
-        to = "super::users::Column::Id",
+        belongs_to = "super::test::Entity",
+        from = "Column::TestId",
+        to = "super::test::Column::Id",
         on_update = "NoAction",
         on_delete = "NoAction"
     )]
-    Users,
+    Test,
 }
 
-impl Related<super::users::Entity> for Entity {
+impl Related<super::test::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Users.def()
+        Relation::Test.def()
     }
 }
 
