@@ -5,6 +5,7 @@ extern crate diesel;
 
 mod api;
 mod database;
+mod database2;
 mod messagebird;
 mod model;
 mod schema;
@@ -24,9 +25,9 @@ use diesel::r2d2::ConnectionManager;
 use diesel::{r2d2, PgConnection};
 use diesel_repository::CrudRepository;
 use env_logger::Env;
+use migration::{Migrator, MigratorTrait};
 use state::AppState;
 use std::sync::Arc;
-use migration::{Migrator, MigratorTrait};
 
 #[derive(Parser)]
 #[clap(about, version, author)]

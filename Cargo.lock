@@ -678,6 +678,7 @@ dependencies = [
  "diesel-postgres",
  "diesel-repository",
  "diesel_migrations",
+ "entity",
  "env_logger",
  "futures",
  "http",

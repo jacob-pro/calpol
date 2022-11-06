@@ -14,12 +14,7 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(&mut bigint_primary_key(User::Id))
                     .col(ColumnDef::new(User::Name).string().not_null())
-                    .col(
-                        ColumnDef::new(User::Email)
-                            .string()
-                            .not_null()
-                            .unique_key(),
-                    )
+                    .col(ColumnDef::new(User::Email).string().not_null().unique_key())
                     .col(ColumnDef::new(User::PasswordHash).string().null())
                     .col(
                         ColumnDef::new(User::PasswordResetToken)
@@ -56,8 +51,16 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .unique_key(),
                     )
-                    .col(ColumnDef::new(Session::Created).timestamp_with_time_zone().not_null())
-                    .col(ColumnDef::new(Session::LastUsed).timestamp_with_time_zone().not_null())
+                    .col(
+                        ColumnDef::new(Session::Created)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Session::LastUsed)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(Session::LastIp).string().not_null())
                     .col(
                         ColumnDef::new(Session::UserAgent)
