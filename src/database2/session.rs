@@ -1,7 +1,10 @@
-use crate::database2::{CrudRepository, DbResult};
+use crate::database2::{
+    decode_token, CrudRepository, DbResult, Paginated, PaginatedDbResult, SortOrder,
+};
 use crate::implement_crud_repository;
 use entity::{session, user};
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
+use serde::{Deserialize, Serialize};
 
 implement_crud_repository!(SessionRepository, session);
 
@@ -45,5 +48,32 @@ impl SessionRepository<'_> {
             .exec(self.db())
             .await
             .map(|d| d.rows_affected)
+    }
+
+    async fn find_belonging_to_user(
+        &self,
+        user: &user::Model,
+        page_token: Option<&str>,
+        page_size: u64,
+        sort_order: SortOrder,
+    ) -> PaginatedDbResult<session::Model> {
+        #[derive(Serialize, Deserialize)]
+        struct Token {
+            id: i64,
+        }
+        let mut query = session::Entity::find()
+            .filter(session::Column::UserId.eq(user.id))
+            .order_by(session::Column::Id, sort_order.into());
+        if let Some(page_token) = page_token {
+            let page_token = decode_token::<Token>(&page_token)?;
+            query = match sort_order {
+                SortOrder::Ascending => query.filter(session::Column::Id.gt(page_token.id)),
+                SortOrder::Descending => query.filter(session::Column::Id.lt(page_token.id)),
+            };
+        }
+        let results = query.limit(page_size).all(self.db()).await?;
+        Ok(Paginated::from_results(results, page_size, |last| Token {
+            id: last.id,
+        }))
     }
 }
