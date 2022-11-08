@@ -1,9 +1,11 @@
 mod session;
+mod user;
 
 use async_trait::async_trait;
+use sea_orm::sea_query::SimpleExpr;
 use sea_orm::{
-    ActiveModelBehavior, ActiveModelTrait, DatabaseConnection, DbErr, EntityTrait, IntoActiveModel,
-    ModelTrait, PrimaryKeyTrait,
+    ActiveModelBehavior, ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait,
+    IntoActiveModel, ModelTrait, PrimaryKeyTrait, Value,
 };
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -24,6 +26,7 @@ impl<T> Paginated<T> {
         F: FnOnce(&T) -> E,
         E: Serialize,
     {
+        assert!(results.len() as u64 <= page_size);
         let mut next_page = None;
         if let Some(last) = results.last() {
             if results.len() as u64 == page_size {
@@ -34,10 +37,20 @@ impl<T> Paginated<T> {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub enum SortOrder {
+    #[default]
     Ascending,
     Descending,
+}
+
+impl SortOrder {
+    fn after<C: ColumnTrait, V: Into<Value>>(&self, c: C, v: V) -> SimpleExpr {
+        match self {
+            SortOrder::Ascending => c.gt(v),
+            SortOrder::Descending => c.lt(v),
+        }
+    }
 }
 
 impl From<SortOrder> for sea_orm::Order {
@@ -127,7 +140,6 @@ where
     }
 }
 
-#[macro_export]
 /// Generates a structure that implements `CrudRepository`
 /// # Arguments
 /// * `name` - The name of the implementation to generate
@@ -151,4 +163,4 @@ macro_rules! implement_crud_repository {
         }
     };
 }
-pub use implement_crud_repository;
+use implement_crud_repository;

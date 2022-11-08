@@ -1,7 +1,7 @@
 use crate::database2::{
-    decode_token, CrudRepository, DbResult, Paginated, PaginatedDbResult, SortOrder,
+    decode_token, implement_crud_repository, CrudRepository, DbResult, Paginated,
+    PaginatedDbResult, SortOrder,
 };
-use crate::implement_crud_repository;
 use entity::{session, user};
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
 use serde::{Deserialize, Serialize};
