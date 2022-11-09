@@ -3,6 +3,7 @@ use crate::database2::{
     PaginatedDbResult, SortOrder,
 };
 use entity::user;
+use sea_orm::sea_query::{Expr, Func};
 use sea_orm::{ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
 use serde::{Deserialize, Serialize};
 
@@ -71,7 +72,11 @@ impl UserRepository<'_> {
     }
 
     async fn find_by_email(&self, email: &str) -> DbResult<Option<user::Model>> {
-        unimplemented!()
+        let lower = email.to_lowercase().trim();
+        user::Entity::find()
+            .filter(Func::lower(Expr::col(user::Column::Name)).equals(lower))
+            .one(self.db())
+            .await
     }
 
     async fn find_by_reset_token(&self, reset_token: &str) -> DbResult<Option<user::Model>> {
