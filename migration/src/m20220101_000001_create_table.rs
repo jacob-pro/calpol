@@ -24,7 +24,7 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(User::PasswordResetTokenCreation)
-                            .date_time()
+                            .timestamp_with_time_zone()
                             .null(),
                     )
                     .col(ColumnDef::new(User::PhoneNumber).string().null())
@@ -83,6 +83,7 @@ impl MigrationTrait for Migration {
                     .table(Test::Table)
                     .if_not_exists()
                     .col(&mut bigint_primary_key(Test::Id))
+                    .col(ColumnDef::new(Test::Name).string().not_null().unique_key())
                     .col(ColumnDef::new(Test::Enabled).boolean().not_null())
                     .col(ColumnDef::new(Test::Config).json_binary().not_null())
                     .col(ColumnDef::new(Test::Failing).boolean().not_null())
@@ -201,6 +202,7 @@ enum Session {
 enum Test {
     Table,
     Id,
+    Name,
     Enabled,
     Config,
     Failing,

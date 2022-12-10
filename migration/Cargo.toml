@@ -9,5 +9,5 @@ name = "migration"
 path = "src/lib.rs"
 
 [dependencies]
-sea-orm-migration = { version = "0.10.1", features = ["sqlx-postgres", "runtime-tokio-native-tls"] }
+sea-orm-migration = { version = "0.10.5", features = ["sqlx-postgres", "runtime-tokio-native-tls"] }
 tokio = { version = "1.15.0", features = ["rt-multi-thread", "macros"] }

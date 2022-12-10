@@ -35,17 +35,17 @@ log = "0.4.14"
 migration = { path = "./migration" }
 rand = "0.8.5"
 reqwest = { version = "0.11.8", features = ["json"] }
-sea-orm = { version = "0.10.1", features = ["sqlx-postgres", "runtime-tokio-native-tls"] }
+sea-orm = { version = "0.10.5", features = ["sqlx-postgres", "runtime-tokio-native-tls"] }
 serde = "1.0"
 serde_json = "1.0"
 serde_plain = "1.0.0"
 serde_yaml = "0.9.13"
-thiserror = "1.0.30"
+thiserror = "1.0.37"
 tokio = { version = "1.15.0", features = ["rt-multi-thread", "macros"] }
 tokio-native-tls = "0.3.0"
 trust-dns-resolver = "0.20.3"
 url = { version = "2.2.2", features = ["serde"] }
-utoipa = { version = "2", features = ["actix_extras", "chrono"], git = "https://github.com/juhaku/utoipa" }
-utoipa-swagger-ui = { version = "2.0.1", features = ["actix-web"], git = "https://github.com/juhaku/utoipa" }
+utoipa = { version = "2.4.2", features = ["actix_extras", "chrono"] }
+utoipa-swagger-ui = { version = "3.0.1", features = ["actix-web"] }
 validator = { version = "0.14.0", features = ["derive", "phone"] }
 x509-parser = "0.12.0"

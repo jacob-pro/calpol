@@ -1,16 +1,15 @@
 use crate::messagebird::MessageBirdClient;
 use crate::settings::{MailerSetting, MessageBirdSetting, Settings};
-use diesel::r2d2::ConnectionManager;
-use diesel::{r2d2, PgConnection};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::transport::smtp::PoolConfig;
 use lettre::{AsyncSmtpTransport, Tokio1Executor};
+use sea_orm::DatabaseConnection;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 
 #[derive(Clone)]
 pub struct AppState {
-    database: r2d2::Pool<ConnectionManager<PgConnection>>,
+    pub database: DatabaseConnection,
     pub mailer: AsyncSmtpTransport<Tokio1Executor>,
     pub message_bird: Option<MessageBirdClient>,
     pub settings: Arc<Settings>,
@@ -20,7 +19,7 @@ pub struct AppState {
 impl AppState {
     pub fn new(
         settings: Arc<Settings>,
-        database: r2d2::Pool<ConnectionManager<PgConnection>>,
+        database: DatabaseConnection,
         test_runner: mpsc::Sender<()>,
     ) -> anyhow::Result<Self> {
         Ok(Self {
@@ -33,7 +32,7 @@ impl AppState {
     }
 
     pub fn database(&self) -> crate::database::Connection {
-        self.database.get().unwrap()
+        unimplemented!()
     }
 
     pub fn queue_test_run(&self) {

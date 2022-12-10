@@ -17,7 +17,7 @@ pub enum SortBy {
 }
 
 impl UserRepository<'_> {
-    async fn find(
+    pub async fn find(
         &self,
         page_token: Option<&str>,
         page_size: u64,
@@ -71,15 +71,16 @@ impl UserRepository<'_> {
         }))
     }
 
-    async fn find_by_email(&self, email: &str) -> DbResult<Option<user::Model>> {
-        let lower = email.to_lowercase().trim();
+    pub async fn find_by_email(&self, email: &str) -> DbResult<Option<user::Model>> {
+        let lower = email.to_lowercase();
+        let trim = lower.trim();
         user::Entity::find()
-            .filter(Func::lower(Expr::col(user::Column::Name)).equals(lower))
+            .filter(Func::lower(Expr::col(user::Column::Name)).equals(trim))
             .one(self.db())
             .await
     }
 
-    async fn find_by_reset_token(&self, reset_token: &str) -> DbResult<Option<user::Model>> {
+    pub async fn find_by_reset_token(&self, reset_token: &str) -> DbResult<Option<user::Model>> {
         user::Entity::find()
             .filter(user::Column::PasswordResetToken.eq(reset_token))
             .one(self.db())

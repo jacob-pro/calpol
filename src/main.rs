@@ -1,6 +1,4 @@
 #[macro_use]
-extern crate diesel_migrations;
-#[macro_use]
 extern crate diesel;
 
 mod api;
@@ -13,19 +11,15 @@ mod settings;
 mod state;
 mod test_runner;
 
-use crate::database::{Connection, NewUser, UserRepositoryImpl};
 use crate::settings::Settings;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
 use actix_web::web::Data;
 use actix_web::{middleware, App, HttpServer};
 use anyhow::Context;
-use api::models::User;
 use clap::{Parser, Subcommand};
-use diesel::r2d2::ConnectionManager;
-use diesel::{r2d2, PgConnection};
-use diesel_repository::CrudRepository;
 use env_logger::Env;
 use migration::{Migrator, MigratorTrait};
+use sea_orm::DatabaseConnection;
 use state::AppState;
 use std::sync::Arc;
 
@@ -74,18 +68,11 @@ async fn main() -> anyhow::Result<()> {
     let connection = sea_orm::Database::connect(&settings.database_url).await?;
     log::info!("Connected to database, running migrations...");
     Migrator::up(&connection, None).await?;
-    panic!("stop");
-
-    let manager = ConnectionManager::<PgConnection>::new(&settings.database_url);
-    let pool = r2d2::Pool::builder().build(manager)?;
-    log::info!("Connected to database");
-
-    // embedded_migrations::run_with_output(&pool.get().unwrap(), &mut std::io::stdout())?;
 
     match opts.subcommand {
         SubCommand::Server => {
             let (tx, rx) = test_runner::make_channel();
-            let state = AppState::new(Arc::clone(&settings), pool, tx)?;
+            let state = AppState::new(Arc::clone(&settings), connection, tx)?;
             let rl_backend = InMemoryBackend::builder().build();
             let runner = test_runner::start(state.clone(), rx);
             let server = HttpServer::new(move || {
@@ -102,24 +89,25 @@ async fn main() -> anyhow::Result<()> {
                 result = server => result.context("Http Server failed")?,
             };
         }
-        SubCommand::CreateUser(u) => create_user(pool.get().unwrap(), u)?,
+        SubCommand::CreateUser(u) => create_user(connection, u)?,
         SubCommand::GenerateSpec => unreachable!(),
     }
     Ok(())
 }
 
-fn create_user(connection: Connection, user: CreateUser) -> anyhow::Result<()> {
-    let user_repository = UserRepositoryImpl::new(&connection);
-    user_repository
-        .insert(NewUser {
-            name: "".to_string(),
-            email: user.email.to_ascii_lowercase(),
-            password_hash: Some(bcrypt::hash(user.password, bcrypt::DEFAULT_COST)?),
-            sms_notifications: false,
-            email_notifications: false,
-            password_reset_token: None,
-            password_reset_token_creation: None,
-        })
-        .map_err(|e| e.into())
-        .map(|u| println!("{}", serde_json::to_string_pretty(&User::from(u)).unwrap()))
+fn create_user(_connection: DatabaseConnection, _user: CreateUser) -> anyhow::Result<()> {
+    // let user_repository = UserRepositoryImpl::new(&connection);
+    // user_repository
+    //     .insert(NewUser {
+    //         name: "".to_string(),
+    //         email: user.email.to_ascii_lowercase(),
+    //         password_hash: Some(bcrypt::hash(user.password, bcrypt::DEFAULT_COST)?),
+    //         sms_notifications: false,
+    //         email_notifications: false,
+    //         password_reset_token: None,
+    //         password_reset_token_creation: None,
+    //     })
+    //     .map_err(|e| e.into())
+    //     .map(|u| println!("{}", serde_json::to_string_pretty(&User::from(u)).unwrap()))
+    Ok(())
 }

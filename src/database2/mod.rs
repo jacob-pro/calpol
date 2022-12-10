@@ -1,5 +1,10 @@
+mod runner_log;
 mod session;
+mod test;
+mod test_result;
 mod user;
+
+pub use user::UserRepository;
 
 use async_trait::async_trait;
 use sea_orm::sea_query::SimpleExpr;

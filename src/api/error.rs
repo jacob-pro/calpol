@@ -108,6 +108,12 @@ impl From<diesel::result::Error> for CalpolApiError {
     }
 }
 
+impl From<sea_orm::DbErr> for CalpolApiError {
+    fn from(e: sea_orm::DbErr) -> Self {
+        CalpolApiError::InternalServerError("SeaOrm", Box::new(e))
+    }
+}
+
 impl From<BlockingError> for CalpolApiError {
     fn from(e: BlockingError) -> Self {
         CalpolApiError::InternalServerError("BlockingError", Box::new(e))

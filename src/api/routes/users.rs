@@ -116,9 +116,9 @@ pub async fn create(
         Ok(user)
     })
     .await??;
-    if let Err(e) = send_reset_email(&state.mailer, &user, &state.settings).await {
-        log::error!("Unable to send reset email on account creation: {}", e)
-    }
+    // if let Err(e) = send_reset_email(&state.mailer, &user, &state.settings).await {
+    //     log::error!("Unable to send reset email on account creation: {}", e)
+    // }
     Ok(User::from(user).json_response())
 }
 
