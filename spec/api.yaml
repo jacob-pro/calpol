@@ -73,6 +73,12 @@ paths:
       description: |
         List the test runner logs
       operationId: ListRunnerLogs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListRunnerLogsRequest'
+        required: true
       responses:
         '200':
           description: List of test runner logs
@@ -502,19 +508,27 @@ components:
           format: email
         name:
           type: string
+    ListRunnerLogsRequest:
+      type: object
+      properties:
+        page_size:
+          type: integer
+          format: int32
+        page_token:
+          type: string
+        sort_order:
+          $ref: '#/components/schemas/SortOrder'
     ListRunnerLogsResponse:
       type: object
       required:
       - items
-      - total
       properties:
         items:
           type: array
           items:
             $ref: '#/components/schemas/RunnerLog'
-        total:
-          type: integer
-          format: int64
+        next_page:
+          type: string
     ListSessionsResponse:
       type: object
       required:
@@ -523,7 +537,7 @@ components:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/SessionSummary'
+            $ref: '#/components/schemas/Session'
     ListTestResultsResponse:
       type: object
       required:
@@ -532,7 +546,7 @@ components:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/TestResultSummary'
+            $ref: '#/components/schemas/TestResult'
     ListTestsResponse:
       type: object
       required:
@@ -541,7 +555,7 @@ components:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/TestSummary'
+            $ref: '#/components/schemas/Test'
     ListUsersRequest:
       type: object
       properties:
@@ -562,7 +576,7 @@ components:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/UserSummary'
+            $ref: '#/components/schemas/User'
         total:
           type: integer
           format: int64
@@ -585,11 +599,11 @@ components:
       - token
       properties:
         session:
-          $ref: '#/components/schemas/SessionSummary'
+          $ref: '#/components/schemas/Session'
         token:
           type: string
         user:
-          $ref: '#/components/schemas/UserSummary'
+          $ref: '#/components/schemas/User'
     PasswordResetRequest:
       type: object
       required:
@@ -604,11 +618,11 @@ components:
       - time_started
       - time_finished
       properties:
-        failure_reason:
+        failure:
           type: string
         id:
           type: integer
-          format: int32
+          format: int64
         tests_failed:
           type: integer
           format: int32
@@ -624,7 +638,7 @@ components:
         time_started:
           type: string
           format: date-time
-    SessionSummary:
+    Session:
       type: object
       required:
       - id
@@ -646,6 +660,11 @@ components:
           format: date-time
         user_agent:
           type: string
+    SortOrder:
+      type: string
+      enum:
+      - Ascending
+      - Descending
     SubmitPasswordResetRequest:
       type: object
       required:
@@ -657,27 +676,7 @@ components:
           format: password
         token:
           type: string
-    TestResultSummary:
-      type: object
-      required:
-      - test_name
-      - success
-      - time_started
-      - time_finished
-      properties:
-        failure_reason:
-          type: string
-        success:
-          type: boolean
-        test_name:
-          type: string
-        time_finished:
-          type: string
-          format: date-time
-        time_started:
-          type: string
-          format: date-time
-    TestSummary:
+    Test:
       type: object
       required:
       - name
@@ -697,6 +696,26 @@ components:
           format: int32
         name:
           type: string
+    TestResult:
+      type: object
+      required:
+      - test_name
+      - success
+      - time_started
+      - time_finished
+      properties:
+        failure_reason:
+          type: string
+        success:
+          type: boolean
+        test_name:
+          type: string
+        time_finished:
+          type: string
+          format: date-time
+        time_started:
+          type: string
+          format: date-time
     UpdateTestRequest:
       type: object
       required:
@@ -726,7 +745,7 @@ components:
           nullable: true
         sms_notifications:
           type: boolean
-    UserSummary:
+    User:
       type: object
       required:
       - id

@@ -1,8 +1,10 @@
 use crate::api::auth::authenticator;
 use crate::api::error::CalpolApiError;
-use crate::api::models::{ListRunnerLogsRequest, ListRunnerLogsResponse};
-use crate::api::{api_resource, api_scope, JsonResponse};
-use crate::database::{RunnerLogRepository, RunnerLogRepositoryImpl};
+use crate::api::models::{
+    ListRunnerLogsRequest, ListRunnerLogsResponse, RunnerLog, DEFAULT_PAGE_SIZE,
+};
+use crate::api::{api_resource, api_scope};
+use crate::database2::RunnerLogRepository;
 use crate::state::AppState;
 use actix_web::web::{Data, ServiceConfig};
 use actix_web::{web, HttpResponse};
@@ -23,6 +25,7 @@ pub fn configure(api: &mut ServiceConfig) {
     path = "/api/runner_logs",
     tag = "RunnerLogs",
     operation_id = "ListRunnerLogs",
+    request_body = ListRunnerLogsRequest,
     responses(
         (status = 200, description = "List of test runner logs", body = ListRunnerLogsResponse),
         (status = "default", response = CalpolApiError)
@@ -30,18 +33,19 @@ pub fn configure(api: &mut ServiceConfig) {
 )]
 async fn list(
     state: Data<AppState>,
-    json: actix_web_validator::Json<ListRunnerLogsRequest>,
+    params: actix_web_validator::Json<ListRunnerLogsRequest>,
 ) -> Result<HttpResponse, CalpolApiError> {
-    web::block(move || -> Result<_, CalpolApiError> {
-        let database = state.database();
-        let log_repository = RunnerLogRepositoryImpl::new(&database);
-        let logs = log_repository.find_all(json.limit, json.offset)?;
-        let response = ListRunnerLogsResponse {
-            items: logs.results.into_iter().map(|l| l.into()).collect(),
-            total: logs.count,
-        };
-        Ok(response)
-    })
-    .await?
-    .map(JsonResponse::json_response)
+    let log_repository = RunnerLogRepository::new(&state.database);
+    let results = log_repository
+        .find(
+            params.page_token.as_deref(),
+            params.page_size.unwrap_or(DEFAULT_PAGE_SIZE).into(),
+            params.sort_order.unwrap_or_default().into(),
+        )
+        .await?;
+    let response = ListRunnerLogsResponse {
+        items: results.rows.into_iter().map(RunnerLog::from).collect(),
+        next_page: results.next_page,
+    };
+    Ok(HttpResponse::Ok().json(response))
 }

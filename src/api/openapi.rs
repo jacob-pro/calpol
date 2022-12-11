@@ -20,7 +20,9 @@ impl Modify for SecurityAddon {
     security(("basicAuth" = [])),
     components(
         schemas(
+            crate::api::models::SortOrder,
             crate::api::models::ListRunnerLogsResponse,
+            crate::api::models::ListRunnerLogsRequest,
             crate::api::models::RunnerLog,
             crate::api::models::SubmitPasswordResetRequest,
             crate::api::models::PasswordResetRequest,

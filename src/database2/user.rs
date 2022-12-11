@@ -64,7 +64,7 @@ impl UserRepository<'_> {
             );
         }
         let results = query.limit(page_size).all(self.db()).await?;
-        Ok(Paginated::from_results(results, page_size, |last| Token {
+        Ok(Paginated::from_rows(results, page_size, |last| Token {
             id: last.id,
             email: last.email.clone(),
             name: last.name.clone(),

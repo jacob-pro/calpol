@@ -4,6 +4,10 @@ mod test;
 mod test_result;
 mod user;
 
+pub use runner_log::RunnerLogRepository;
+pub use session::SessionRepository;
+pub use test::TestRepository;
+pub use test_result::TestResultRepository;
 pub use user::UserRepository;
 
 use async_trait::async_trait;
@@ -21,24 +25,24 @@ pub type PaginatedDbResult<T> = Result<Paginated<T>, PaginatedErr>;
 
 #[derive(Debug)]
 pub struct Paginated<T> {
-    results: Vec<T>,
-    next_page: Option<String>,
+    pub rows: Vec<T>,
+    pub next_page: Option<String>,
 }
 
 impl<T> Paginated<T> {
-    fn from_results<F, E>(results: Vec<T>, page_size: u64, next_page_fn: F) -> Self
+    fn from_rows<F, E>(rows: Vec<T>, page_size: u64, next_page_fn: F) -> Self
     where
         F: FnOnce(&T) -> E,
         E: Serialize,
     {
-        assert!(results.len() as u64 <= page_size);
+        assert!(rows.len() as u64 <= page_size);
         let mut next_page = None;
-        if let Some(last) = results.last() {
-            if results.len() as u64 == page_size {
+        if let Some(last) = rows.last() {
+            if rows.len() as u64 == page_size {
                 next_page = Some(encode_token(&next_page_fn(last)));
             }
         }
-        Self { results, next_page }
+        Self { rows, next_page }
     }
 }
 

@@ -1,10 +1,27 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, FixedOffset, Utc};
 use lettre::Address;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use validator::Validate;
 
 const DEFAULT_LIMIT: u32 = 50;
+pub const DEFAULT_PAGE_SIZE: u32 = 50;
+
+#[derive(Copy, Clone, Default, Debug, Deserialize, ToSchema)]
+pub enum SortOrder {
+    #[default]
+    Ascending,
+    Descending,
+}
+
+impl Into<crate::database2::SortOrder> for SortOrder {
+    fn into(self) -> crate::database2::SortOrder {
+        match self {
+            SortOrder::Ascending => crate::database2::SortOrder::Ascending,
+            SortOrder::Descending => crate::database2::SortOrder::Descending,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct LoginRequest {
@@ -165,25 +182,26 @@ pub struct GetTestResultsRequest {
     pub limit: u32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Deserialize, Validate, ToSchema)]
 pub struct ListRunnerLogsRequest {
     #[validate(range(min = 1, max = 100))]
-    pub limit: u32,
-    pub offset: u32,
+    pub page_size: Option<u32>,
+    pub page_token: Option<String>,
+    pub sort_order: Option<SortOrder>,
 }
 
 #[derive(ToSchema, Debug, Clone, Serialize, Deserialize)]
 pub struct ListRunnerLogsResponse {
     pub items: Vec<RunnerLog>,
-    pub total: i64,
+    pub next_page: Option<String>,
 }
 
 #[derive(ToSchema, Debug, Clone, Serialize, Deserialize)]
 pub struct RunnerLog {
-    pub id: i32,
-    pub time_started: DateTime<Utc>,
-    pub time_finished: DateTime<Utc>,
-    pub failure_reason: Option<String>,
+    pub id: i64,
+    pub time_started: DateTime<FixedOffset>,
+    pub time_finished: DateTime<FixedOffset>,
+    pub failure: Option<String>,
     pub tests_passed: Option<i32>,
     pub tests_failed: Option<i32>,
     pub tests_skipped: Option<i32>,

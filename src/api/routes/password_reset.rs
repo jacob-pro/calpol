@@ -2,7 +2,7 @@ use crate::api::error::{CalpolApiError, UnexpectedError};
 use crate::api::models::{PasswordResetRequest, SubmitPasswordResetRequest};
 use crate::api::{api_resource, api_scope, auth, auth_rate_limiter};
 use crate::database2::{CrudRepository, UserRepository};
-use crate::settings::Settings;
+use crate::settings::MailerSetting;
 use crate::state::AppState;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
 use actix_web::http::StatusCode;
@@ -27,7 +27,7 @@ pub fn configure(api: &mut ServiceConfig, rl_backend: &InMemoryBackend) {
 pub async fn send_reset_email<M, E>(
     mailer: &M,
     user: &entity::user::Model,
-    settings: &Settings,
+    settings: &MailerSetting,
 ) -> Result<(), CalpolApiError>
 where
     M: lettre::AsyncTransport<Error = E> + Sync,
@@ -42,8 +42,8 @@ where
         .to(user
             .get_mailbox()
             .map_err(UnexpectedError::InvalidUserEmail)?)
-        .from(settings.mailer.send_from.clone())
-        .reply_to(settings.mailer.reply_to().clone())
+        .from(settings.send_from.clone())
+        .reply_to(settings.reply_to().clone())
         .subject("Calpol Password Reset")
         .body(body)
         .unwrap();
@@ -81,7 +81,7 @@ async fn request(
     model.password_reset_token = Set(Some(auth::generate_token()));
     model.password_reset_token_creation = Set(Some(Utc::now().into()));
     let user = user_repository.update(model).await?;
-    send_reset_email(&state.mailer, &user, &state.settings).await?;
+    send_reset_email(&state.mailer, &user, &state.settings.mailer).await?;
     Ok(HttpResponse::Ok().json(()))
 }
 

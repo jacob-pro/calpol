@@ -55,13 +55,13 @@ pub fn test_and_result_to_summary(
     }
 }
 
-impl From<database::RunnerLog> for RunnerLog {
-    fn from(log: database::RunnerLog) -> Self {
+impl From<entity::runner_log::Model> for RunnerLog {
+    fn from(log: entity::runner_log::Model) -> Self {
         RunnerLog {
             id: log.id,
             time_started: log.time_started,
             time_finished: log.time_finished,
-            failure_reason: log.failure_reason,
+            failure: log.failure,
             tests_passed: log.tests_passed,
             tests_failed: log.tests_failed,
             tests_skipped: log.tests_skipped,

@@ -82,6 +82,24 @@ impl From<PathError> for CalpolApiError {
     }
 }
 
+impl From<crate::database2::InvalidTokenError> for CalpolApiError {
+    fn from(_: crate::database2::InvalidTokenError) -> Self {
+        ApiError::builder(StatusCode::BAD_REQUEST)
+            .message("Invalid page token")
+            .finish()
+            .into()
+    }
+}
+
+impl From<crate::database2::PaginatedErr> for CalpolApiError {
+    fn from(err: crate::database2::PaginatedErr) -> Self {
+        match err {
+            crate::database2::PaginatedErr::DbErr(e) => e.into(),
+            crate::database2::PaginatedErr::Token(e) => e.into(),
+        }
+    }
+}
+
 // 5xx Errors
 
 /// Various unexpected errors that could occur in the Calpol API.
